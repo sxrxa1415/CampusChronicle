@@ -17,7 +17,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u1",
     name: "Dr. Rajesh Kumar",
-    email: "admin@srec.edu",
+    email: "admin@reports.edu",
     role: "ADMIN",
     avatar: "RK",
     theme: "light",
@@ -28,7 +28,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u2",
     name: "Dr. Meenakshi Sundaram",
-    email: "hod.cse@srec.edu",
+    email: "hod.cse@reports.edu",
     role: "DEPARTMENT_HEAD",
     departmentId: "dept1",
     avatar: "MS",
@@ -40,7 +40,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u3",
     name: "Prof. Anitha Krishnamurthy",
-    email: "faculty.cse@srec.edu",
+    email: "faculty.cse@reports.edu",
     role: "FACULTY",
     departmentId: "dept1",
     avatar: "AK",
@@ -52,7 +52,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u4",
     name: "Dr. Senthilkumar Ramasamy",
-    email: "reviewer@srec.edu",
+    email: "reviewer@reports.edu",
     role: "REVIEWER",
     avatar: "SR",
     theme: "light",
@@ -63,7 +63,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u5",
     name: "Dr. Kavitha Murugesan",
-    email: "hod.ece@srec.edu",
+    email: "hod.ece@reports.edu",
     role: "DEPARTMENT_HEAD",
     departmentId: "dept2",
     avatar: "KM",
@@ -75,7 +75,7 @@ export const MOCK_USERS: InstituteUser[] = [
   {
     id: "u6",
     name: "Prof. Suresh Babu",
-    email: "faculty.mech@srec.edu",
+    email: "faculty.mech@reports.edu",
     role: "FACULTY",
     departmentId: "dept3",
     avatar: "SB",
@@ -273,10 +273,10 @@ export const MOCK_NOTIFICATIONS: ReportNotification[] = [
 ];
 
 export const DEMO_CREDENTIALS = [
-  { email: "admin@srec.edu", password: "Admin@123", role: "ADMIN", name: "Dr. Rajesh Kumar" },
-  { email: "hod.cse@srec.edu", password: "Hod@123", role: "DEPARTMENT_HEAD", name: "Dr. Meenakshi Sundaram" },
-  { email: "faculty.cse@srec.edu", password: "Faculty@123", role: "FACULTY", name: "Prof. Anitha Krishnamurthy" },
-  { email: "reviewer@srec.edu", password: "Review@123", role: "REVIEWER", name: "Dr. Senthilkumar Ramasamy" },
+  { email: "admin@reports.edu", password: "Admin@123", role: "ADMIN", name: "Dr. Rajesh Kumar" },
+  { email: "hod.cse@reports.edu", password: "Hod@123", role: "DEPARTMENT_HEAD", name: "Dr. Meenakshi Sundaram" },
+  { email: "faculty.cse@reports.edu", password: "Faculty@123", role: "FACULTY", name: "Prof. Anitha Krishnamurthy" },
+  { email: "reviewer@reports.edu", password: "Review@123", role: "REVIEWER", name: "Dr. Senthilkumar Ramasamy" },
 ];
 
 export const YEARLY_TREND_DATA = [

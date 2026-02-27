@@ -100,10 +100,10 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-4xl font-bold leading-tight mb-4 text-balance">
-              Sri Ramakrishna Engineering College
+              
             </h2>
             <p className="text-white/70 text-lg leading-relaxed">
-              Coimbatore, Tamil Nadu — Streamlining annual academic reporting for all departments.
+              Tamil Nadu — Streamlining annual academic reporting for all departments.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-white/40 text-xs relative z-10">
-          {String.fromCharCode(169)} 2024 SREC Coimbatore. All rights reserved.
+          {String.fromCharCode(169)} 2026. All rights reserved.
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-1">Sign in</h2>
-            <p className="text-slate-600 text-sm">{"Welcome back to SREC's report portal"}</p>
+            <p className="text-slate-600 text-sm">{"Welcome back to report portal"}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -153,7 +153,7 @@ export default function LoginPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="email"
-                  placeholder="you@srec.edu"
+                  placeholder="you@reports.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-900 placeholder:text-slate-400"

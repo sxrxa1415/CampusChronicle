@@ -12,7 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "CampusChronicle - Annual Report Portal",
   description:
-    "Annual Report Generation Portal for Sri Ramakrishna Engineering College, Coimbatore — streamlined data collection, KPI analytics, and automated report generation.",
+    "Annual Report Generation Portal for  — streamlined data collection, KPI analytics, and automated report generation.",
   keywords: ["annual report", "college", "KPI", "department", "Tamil Nadu"],
 };
 

@@ -53,7 +53,7 @@ export function AppSidebar() {
         </div>
         <div>
           <p className="text-sm font-bold text-sidebar-foreground leading-tight">CampusChronicle</p>
-          <p className="text-[10px] text-sidebar-foreground/50">SREC · 2023-24</p>
+          <p className="text-[10px] text-sidebar-foreground/50">2025-26</p>
         </div>
       </div>
 

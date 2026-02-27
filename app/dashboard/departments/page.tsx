@@ -34,7 +34,7 @@ export default function DepartmentsPage() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
         <h2 className="text-xl font-bold text-foreground">Departments</h2>
-        <p className="text-sm text-muted-foreground">Sri Ramakrishna Engineering College · {MOCK_DEPARTMENTS.length} departments</p>
+        <p className="text-sm text-muted-foreground"> · {MOCK_DEPARTMENTS.length} departments</p>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">

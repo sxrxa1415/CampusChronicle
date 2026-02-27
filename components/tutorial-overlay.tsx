@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 const TUTORIAL_STEPS = [
   {
     title: "Welcome to CampusChronicle!",
-    description: "This portal helps SREC manage annual reports efficiently. Let's take a quick tour.",
+    description: "This portal helps manage annual reports efficiently. Let's take a quick tour.",
     action: null,
   },
   {

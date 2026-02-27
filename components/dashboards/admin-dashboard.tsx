@@ -37,7 +37,7 @@ export function AdminDashboard() {
       <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground">Admin Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Sri Ramakrishna Engineering College · Academic Year 2023-24</p>
+          <p className="text-sm text-muted-foreground"> · Academic Year 2025-26</p>
         </div>
         <Button onClick={() => router.push("/dashboard/report-builder")} size="sm">
           <FileText className="w-4 h-4 mr-2" /> Generate Report

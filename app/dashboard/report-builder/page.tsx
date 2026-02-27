@@ -261,8 +261,8 @@ export default function ReportBuilderPage() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="bg-sidebar text-sidebar-foreground p-8 rounded-xl text-center">
-              <h1 className="text-2xl font-bold">Sri Ramakrishna Engineering College</h1>
-              <p className="text-sidebar-foreground/70">Coimbatore — Annual Report 2023-24</p>
+              <h1 className="text-2xl font-bold"></h1>
+              <p className="text-sidebar-foreground/70">Annual Report 2025-26</p>
             </div>
             {items.map((section, idx) => (
               <div key={section.id} className="border border-border rounded-lg p-4">

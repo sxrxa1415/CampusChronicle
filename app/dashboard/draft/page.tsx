@@ -174,10 +174,10 @@ export default function DraftPage() {
                 className="bg-card border border-border rounded-xl overflow-hidden">
                 {/* Report header */}
                 <div className="bg-sidebar text-sidebar-foreground p-8 text-center">
-                  <h1 className="text-2xl font-bold mb-1">Sri Ramakrishna Engineering College</h1>
-                  <p className="text-sidebar-foreground/70 text-sm">Coimbatore, Tamil Nadu — 641022</p>
+                  <h1 className="text-2xl font-bold mb-1"></h1>
+                  <p className="text-sidebar-foreground/70 text-sm"></p>
                   <div className="mt-4 inline-block bg-sidebar-accent px-6 py-2 rounded-full">
-                    <p className="text-base font-semibold">Annual Report 2023-24</p>
+                    <p className="text-base font-semibold">Annual Report 2025-26</p>
                     <p className="text-sm text-sidebar-foreground/70">{dept?.name}</p>
                   </div>
                 </div>

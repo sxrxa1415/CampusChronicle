@@ -1,6 +1,6 @@
 # CampusChronicle - Annual Report Portal
 
-A comprehensive, fully-interactive annual report management system for Sri Ramakrishna Engineering College, Tamil Nadu.
+A comprehensive, fully-interactive annual report management system for , Tamil Nadu.
 
 ## Overview
 

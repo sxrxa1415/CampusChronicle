@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
       <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground">Analytics & Insights</h2>
-          <p className="text-sm text-muted-foreground">Sri Ramakrishna Engineering College · 2023-24</p>
+          <p className="text-sm text-muted-foreground"> · 2025-26</p>
         </div>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
           <SelectTrigger className="w-48">
