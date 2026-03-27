@@ -12,20 +12,20 @@ import { useRouter } from "next/navigation";
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const STATUS_COLORS: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  UNDER_REVIEW: "bg-blue-100 text-blue-700 border-blue-200",
-  SUBMITTED: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_ADMIN: "bg-blue-100 text-blue-700 border-blue-200",
+  PENDING_OFFICE: "bg-yellow-100 text-yellow-700 border-yellow-200",
   DRAFT: "bg-gray-100 text-gray-600 border-gray-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 export function ReviewerDashboard() {
   const { reportDrafts, approvalLogs, currentUser, notifications } = useAppStore();
   const router = useRouter();
 
-  const pending = reportDrafts.filter((d) => d.status === "SUBMITTED").length;
-  const underReview = reportDrafts.filter((d) => d.status === "UNDER_REVIEW").length;
-  const approved = reportDrafts.filter((d) => d.status === "APPROVED").length;
+  const pending = useAppStore.getState().metricEntries.filter((d) => d.status === "PENDING_OFFICE").length;
+  const underReview = useAppStore.getState().metricEntries.filter((d) => d.status === "PENDING_ADMIN").length;
+  const approved = useAppStore.getState().metricEntries.filter((d) => d.status === "APPROVED_FINAL").length;
   const myLogs = approvalLogs.filter((l) => l.reviewerUserId === currentUser?.id);
   const unread = notifications.filter((n) => n.userId === currentUser?.id && !n.isRead).length;
 
@@ -33,7 +33,7 @@ export function ReviewerDashboard() {
     { name: "Submitted", value: pending, fill: "#f59e0b" },
     { name: "Under Review", value: underReview, fill: "#6366f1" },
     { name: "Approved", value: approved, fill: "#10b981" },
-    { name: "Draft", value: reportDrafts.filter((d) => d.status === "DRAFT").length, fill: "#94a3b8" },
+    { name: "Draft", value: useAppStore.getState().metricEntries.filter((d) => d.status === "DRAFT").length, fill: "#94a3b8" },
   ];
 
   return (
@@ -50,7 +50,9 @@ export function ReviewerDashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Pending Review" value={pending} icon={Clock} color="orange" subtitle="Needs attention" />
-        <StatCard title="Under Review" value={underReview} icon={Eye} color="blue" />
+        <StatCard title="Office Spends ($)" value={
+          useAppStore.getState().metricEntries.filter((e) => e.status === "PENDING_ADMIN" || e.status === "APPROVED_FINAL").reduce((sum, e) => sum + (e.financialSpends || 0), 0)
+        } icon={Award} color="red" subtitle="Verified" />
         <StatCard title="Approved" value={approved} icon={CheckSquare} color="green" trend={{ value: 2, label: "this cycle" }} />
         <StatCard title="Actions Taken" value={myLogs.length} icon={Award} color="purple" />
       </div>
@@ -71,35 +73,37 @@ export function ReviewerDashboard() {
           </ResponsiveContainer>
         </motion.div>
 
-        {/* Reports awaiting review */}
+        {/* Submissions awaiting review */}
         <motion.div variants={item} className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Reports Awaiting Action</h3>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/review")}>Review all</Button>
+            <h3 className="text-sm font-semibold text-foreground">Submissions Awaiting Action</h3>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/entries")}>Review all</Button>
           </div>
           <div className="space-y-3">
-            {reportDrafts
-              .filter((d) => ["SUBMITTED","UNDER_REVIEW"].includes(d.status))
-              .map((draft) => {
-                const dept = MOCK_DEPARTMENTS.find((d) => d.id === draft.departmentId);
-                const submitter = MOCK_USERS.find((u) => u.id === draft.createdByUserId);
+            {/* Show pending entries from HODs */}
+            {useAppStore.getState().metricEntries
+              .filter((e) => e.status === "PENDING_OFFICE")
+              .slice(0, 4)
+              .map((entry) => {
+                const dept = MOCK_DEPARTMENTS.find((d) => d.id === entry.departmentId);
                 return (
-                  <div key={draft.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div key={entry.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{dept?.code} — {dept?.name}</p>
-                      <p className="text-xs text-muted-foreground">By {submitter?.name} · {draft.submittedAt ? new Date(draft.submittedAt).toLocaleDateString("en-IN", { day:"numeric", month:"short" }) : "—"}</p>
+                      <p className="text-sm font-medium text-foreground">{dept?.code} — {entry.title}</p>
+                      <p className="text-xs text-muted-foreground">{entry.category.replace("_", " ")} {entry.financialSpends ? `| Spend: $${entry.financialSpends}` : ""}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={`text-[11px] border ${STATUS_COLORS[draft.status]}`}>{draft.status.replace("_"," ")}</Badge>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => router.push(`/dashboard/review/${draft.id}`)}>
+                      <Badge className={`text-[11px] border bg-blue-100 text-blue-700`}>Pending Office</Badge>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => router.push(`/dashboard/entries`)}>
                         Review
                       </Button>
                     </div>
                   </div>
                 );
               })}
-            {reportDrafts.filter((d) => ["SUBMITTED","UNDER_REVIEW"].includes(d.status)).length === 0 && (
-              <div className="py-8 text-center text-muted-foreground text-sm">All caught up! No reports pending.</div>
+            {
+              useAppStore.getState().metricEntries.filter(e => e.status === "PENDING_OFFICE").length === 0 && (
+              <div className="py-8 text-center text-muted-foreground text-sm">No entries pending from HODs.</div>
             )}
           </div>
         </motion.div>
@@ -112,8 +116,8 @@ export function ReviewerDashboard() {
           {myLogs.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-4">No review actions yet.</p>
           ) : myLogs.map((log) => {
-            const draft = reportDrafts.find((d) => d.id === log.reportDraftId);
-            const dept = MOCK_DEPARTMENTS.find((d) => d.id === draft?.departmentId);
+            const entry = useAppStore.getState().metricEntries.find((d) => d.id === log.reportDraftId) || reportDrafts.find((d) => d.id === log.reportDraftId);
+            const dept = MOCK_DEPARTMENTS.find((d) => d.id === entry?.departmentId);
             return (
               <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
                 <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${log.action === "APPROVED" ? "bg-green-500" : log.action === "REJECTED" ? "bg-red-500" : "bg-yellow-500"}`} />

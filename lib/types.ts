@@ -9,8 +9,17 @@ export interface InstituteUser {
   avatar?: string;
   theme: "light" | "dark";
   emailNotificationsEnabled: boolean;
+  attachedDepartmentIds?: string[];
+  menteeIds?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InstituteStudent {
+  id: string;
+  name: string;
+  rollNo: string;
+  departmentId: string;
 }
 
 export interface Department {
@@ -51,10 +60,25 @@ export interface DepartmentMetricEntry {
   attachments?: string[];
   images?: string[];
   createdByUserId: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  studentId?: string;
+  status: "DRAFT" | "PENDING_HOD" | "PENDING_OFFICE" | "PENDING_ADMIN" | "APPROVED_FINAL" | "REJECTED_NEEDS_REVIEW";
   reviewerComment?: string;
   createdAt: string;
   updatedAt: string;
+  // KPI Target and Analytics fields
+  passPercentage?: number;
+  placementPercentage?: number;
+  researchOutputScore?: number;
+  attendanceTrends?: number;
+  studentTargets?: {
+    papersPublished: number;
+    competitionsDone: number;
+  };
+  staffTargets?: {
+    tasksDone: number;
+    extraPay: number;
+  };
+  financialSpends?: number;
 }
 
 export interface DepartmentKPI {
@@ -108,12 +132,14 @@ export interface DepartmentReportDraft {
   reportingYearId: string;
   compiledMetricEntryIds: string[];
   previewHtml?: string;
-  status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
+  status: "DRAFT" | "PENDING_HOD" | "PENDING_OFFICE" | "PENDING_ADMIN" | "APPROVED_FINAL" | "REJECTED_NEEDS_REVIEW";
   submittedAt?: string;
   approvedAt?: string;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
+  financialSpends?: number;
+  officeStaffFinancialSpends?: number;
 }
 
 export interface ReportComment {

@@ -4,32 +4,76 @@ import { useAppStore } from "@/lib/store";
 import { MOCK_DEPARTMENTS, YEARLY_TREND_DATA, RESEARCH_OUTPUT_DATA, BUDGET_DATA, DEPT_PERFORMANCE_DATA, PLACEMENT_DATA } from "@/lib/mock-data";
 import { StatCard } from "@/components/stat-card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Users, FileText, CheckSquare, BarChart3, BookOpen, Award, AlertCircle, TrendingUp } from "lucide-react";
+import { Users, FileText, CheckSquare, BarChart3, BookOpen, Award, AlertCircle, TrendingUp, Sparkles } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
-const PIE_COLORS = ["#6366f1","#06b6d4","#f59e0b","#10b981","#f43f5e"];
+const PIE_COLORS = ["#6366f1", "#06b6d4", "#f59e0b", "#10b981", "#f43f5e"];
 
 const STATUS_COLORS: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  UNDER_REVIEW: "bg-blue-100 text-blue-700 border-blue-200",
-  SUBMITTED: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_ADMIN: "bg-blue-100 text-blue-700 border-blue-200",
+  PENDING_OFFICE: "bg-yellow-100 text-yellow-700 border-yellow-200",
   DRAFT: "bg-gray-100 text-gray-600 border-gray-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 export function AdminDashboard() {
   const { reportDrafts, metricEntries, notifications, currentUser } = useAppStore();
   const router = useRouter();
 
-  const approved = reportDrafts.filter((d) => d.status === "APPROVED").length;
-  const pending = reportDrafts.filter((d) => ["SUBMITTED","UNDER_REVIEW"].includes(d.status)).length;
+  const approved = metricEntries.filter((d) => d.status === "APPROVED_FINAL").length;
+  const pending = metricEntries.filter((d) => d.status === "PENDING_ADMIN").length;
   const totalEntries = metricEntries.length;
-  const approvedEntries = metricEntries.filter((e) => e.status === "APPROVED").length;
+  const approvedEntries = metricEntries.filter((e) => e.status === "APPROVED_FINAL").length;
   const unreadNotifs = notifications.filter((n) => n.userId === currentUser?.id && !n.isRead).length;
+
+  // Dynamic Chart Logic
+  const realBudgetData = MOCK_DEPARTMENTS.map(dept => {
+    const total = metricEntries
+      .filter(e => e.departmentId === dept.id && ["APPROVED_FINAL", "PENDING_ADMIN", "PENDING_OFFICE"].includes(e.status))
+      .reduce((sum, e) => sum + (e.financialSpends || 0), 0);
+    return { name: dept.code, value: total };
+  }).filter(d => d.value > 0);
+
+  const displayBudgetData = realBudgetData.length > 0 ? realBudgetData : [{ name: "No Spends Yet", value: 1 }];
+
+  const realDeptPerformance = MOCK_DEPARTMENTS.map(dept => {
+    const deptEntries = metricEntries.filter(e => e.departmentId === dept.id);
+    const completed = deptEntries.filter(e => e.status === "APPROVED_FINAL").length;
+    return {
+      dept: dept.code,
+      performance: deptEntries.length ? Math.round((completed / deptEntries.length) * 100) : 0,
+      target: 100
+    };
+  });
+
+  const generateInsights = () => {
+    const lastYear = YEARLY_TREND_DATA[YEARLY_TREND_DATA.length - 2];
+    const thisYear = YEARLY_TREND_DATA[YEARLY_TREND_DATA.length - 1];
+
+    const passCseDiff = thisYear.cse - lastYear.cse;
+    const passEceDiff = thisYear.ece - lastYear.ece;
+
+    const researchLast = RESEARCH_OUTPUT_DATA[RESEARCH_OUTPUT_DATA.length - 2];
+    const researchThis = RESEARCH_OUTPUT_DATA[RESEARCH_OUTPUT_DATA.length - 1];
+    const totalResearchLast = researchLast.journals + researchLast.conferences;
+    const totalResearchThis = researchThis.journals + researchThis.conferences;
+
+    const topDept = [...realDeptPerformance].sort((a,b) => b.performance - a.performance)[0];
+
+    return [
+      `CSE pass % ${passCseDiff > 0 ? "increased" : "decreased"} by ${Math.abs(passCseDiff)}% compared to last year.`,
+      `Overall Research Output grew by ${totalResearchThis - totalResearchLast} publications across all departments.`,
+      `ECE pass % ${passEceDiff > 0 ? "increased" : "decreased"} by ${Math.abs(passEceDiff)}% compared to last year.`,
+      `Top performing department this year is ${topDept?.dept || "IT"} with ${topDept?.performance || 94}% approval completion rate.`
+    ];
+  };
+
+  const insights = generateInsights();
 
   return (
     <div className="space-y-6">
@@ -48,9 +92,25 @@ export function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Departments" value={MOCK_DEPARTMENTS.length} icon={Users} color="blue" trend={{ value: 0, label: "All departments" }} />
         <StatCard title="Reports Approved" value={approved} icon={CheckSquare} color="green" trend={{ value: 12, label: "vs last year" }} />
-        <StatCard title="Pending Review" value={pending} icon={AlertCircle} color="orange" subtitle="Need attention" />
-        <StatCard title="Total Entries" value={totalEntries} icon={BookOpen} color="purple" trend={{ value: 8, label: "vs last year" }} />
+        <StatCard title="Pending Final Review" value={pending} icon={AlertCircle} color="orange" subtitle="Need admin review" />
+        <StatCard title="Total Raw Entries" value={totalEntries} icon={BookOpen} color="purple" trend={{ value: 8, label: "vs last year" }} />
       </div>
+
+      {/* KPI Engine Insights */}
+      <motion.div variants={item} className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-sm font-bold text-indigo-900">Automated AI Insights (KPI Engine)</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {insights.map((insight, idx) => (
+            <div key={idx} className="bg-white/60 backdrop-blur-sm border border-white/80 p-4 rounded-lg flex items-start gap-3 shadow-sm">
+              <span className="w-2 h-2 mt-1.5 rounded-full bg-indigo-500 shrink-0" />
+              <p className="text-sm font-medium text-indigo-950 leading-relaxed">{insight}</p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Charts row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -74,13 +134,13 @@ export function AdminDashboard() {
 
         {/* Budget distribution */}
         <motion.div variants={item} className="bg-card border border-border rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Budget Distribution 2023-24</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Verified Dept Spends 2025-26</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={BUDGET_DATA} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}%`} labelLine={false}>
-                {BUDGET_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+              <Pie data={displayBudgetData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: $${value}`} labelLine={false}>
+                {displayBudgetData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+              <Tooltip formatter={(v) => `$${v}`} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
         </motion.div>
@@ -98,9 +158,9 @@ export function AdminDashboard() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="journals" fill="#6366f1" radius={[3,3,0,0]} name="Journals" />
-              <Bar dataKey="conferences" fill="#06b6d4" radius={[3,3,0,0]} name="Conferences" />
-              <Bar dataKey="patents" fill="#f59e0b" radius={[3,3,0,0]} name="Patents" />
+              <Bar dataKey="journals" fill="#6366f1" radius={[3, 3, 0, 0]} name="Journals" />
+              <Bar dataKey="conferences" fill="#06b6d4" radius={[3, 3, 0, 0]} name="Conferences" />
+              <Bar dataKey="patents" fill="#f59e0b" radius={[3, 3, 0, 0]} name="Patents" />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -114,7 +174,7 @@ export function AdminDashboard() {
               <XAxis type="number" tick={{ fontSize: 11 }} />
               <YAxis dataKey="company" type="category" tick={{ fontSize: 11 }} width={70} />
               <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
-              <Bar dataKey="count" fill="#10b981" radius={[0,3,3,0]} name="Students" />
+              <Bar dataKey="count" fill="#10b981" radius={[0, 3, 3, 0]} name="Students" />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -122,21 +182,22 @@ export function AdminDashboard() {
 
       {/* Report status + dept performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Department report status */}
+        {/* Department submissions status */}
         <motion.div variants={item} className="bg-card border border-border rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Department Report Status</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Department Backlog (Entries)</h3>
           <div className="space-y-3">
             {MOCK_DEPARTMENTS.map((dept) => {
-              const draft = reportDrafts.find((d) => d.departmentId === dept.id);
-              const status = draft?.status ?? "NOT_STARTED";
+              const total = metricEntries.filter(e => e.departmentId === dept.id).length;
+              const completed = metricEntries.filter(e => e.departmentId === dept.id && e.status === "APPROVED_FINAL").length;
+              const pending = total - completed;
               return (
                 <div key={dept.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{dept.code}</p>
                     <p className="text-xs text-muted-foreground">{dept.name}</p>
                   </div>
-                  <Badge className={`text-[11px] border ${STATUS_COLORS[status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                    {status.replace("_", " ")}
+                  <Badge className={`text-[11px] border ${pending === 0 ? "bg-green-100 text-green-700" : pending > 5 ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
+                    {pending === 0 ? "All Fully Approved" : `${pending} Unverified`}
                   </Badge>
                 </div>
               );
@@ -146,16 +207,16 @@ export function AdminDashboard() {
 
         {/* Dept performance bar */}
         <motion.div variants={item} className="bg-card border border-border rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Department Performance vs Target</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Approval Completion % by Dept</h3>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={DEPT_PERFORMANCE_DATA}>
+            <BarChart data={realDeptPerformance}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="dept" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} domain={[60, 100]} />
+              <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} />
               <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="performance" fill="#6366f1" radius={[3,3,0,0]} name="Actual %" />
-              <Bar dataKey="target" fill="#e2e8f0" radius={[3,3,0,0]} name="Target %" />
+              <Bar dataKey="performance" fill="#6366f1" radius={[3, 3, 0, 0]} name="Approved %" />
+              <Bar dataKey="target" fill="#e2e8f0" radius={[3, 3, 0, 0]} name="Target (100%)" />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>

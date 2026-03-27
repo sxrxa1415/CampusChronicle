@@ -10,11 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, FileText, Eye, Download, Filter } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  UNDER_REVIEW: "bg-purple-100 text-purple-700 border-purple-200",
-  SUBMITTED: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_ADMIN: "bg-purple-100 text-purple-700 border-purple-200",
+  PENDING_OFFICE: "bg-yellow-100 text-yellow-700 border-yellow-200",
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
@@ -41,7 +41,7 @@ export default function ReportsPage() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
       <motion.div variants={item}>
         <h2 className="text-xl font-bold text-foreground">All Reports</h2>
-        <p className="text-sm text-muted-foreground">{reportDrafts.length} department reports · 2023-24</p>
+        <p className="text-sm text-muted-foreground">{reportDrafts.length} department reports · 2025-26</p>
       </motion.div>
 
       <motion.div variants={item} className="relative max-w-sm">
@@ -51,8 +51,8 @@ export default function ReportsPage() {
 
       <motion.div variants={item} className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-border bg-muted/30">
-          {["Department","Status","Submitted","Entries","Actions"].map((h, i) => (
-            <span key={h} className={`${[5,2,2,1,2][i] ? `col-span-${[5,2,2,1,2][i]}` : ""} text-xs font-semibold text-muted-foreground uppercase tracking-wide col-span-${[4,2,2,2,2][i]}`}>{h}</span>
+          {["Department", "Status", "Submitted", "Entries", "Actions"].map((h, i) => (
+            <span key={h} className={`${[5, 2, 2, 1, 2][i] ? `col-span-${[5, 2, 2, 1, 2][i]}` : ""} text-xs font-semibold text-muted-foreground uppercase tracking-wide col-span-${[4, 2, 2, 2, 2][i]}`}>{h}</span>
           ))}
         </div>
 
@@ -80,7 +80,7 @@ export default function ReportsPage() {
               </div>
               <div className="md:col-span-2 flex items-center">
                 <span className="text-xs text-muted-foreground">
-                  {d.submittedAt ? new Date(d.submittedAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"2-digit" }) : "—"}
+                  {d.submittedAt ? new Date(d.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" }) : "—"}
                 </span>
               </div>
               <div className="md:col-span-2 flex items-center">
@@ -99,12 +99,12 @@ export default function ReportsPage() {
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{dept?.name} — Annual Report 2023-24</DialogTitle>
+            <DialogTitle>{dept?.name} — Annual Report 2025-26</DialogTitle>
           </DialogHeader>
           {draft && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 flex-wrap">
-                <Badge className={`text-[11px] border ${STATUS_STYLES[draft.status]}`}>{draft.status.replace("_"," ")}</Badge>
+                <Badge className={`text-[11px] border ${STATUS_STYLES[draft.status]}`}>{draft.status.replace("_", " ")}</Badge>
                 <span className="text-xs text-muted-foreground">By {submitter?.name}</span>
                 {draft.submittedAt && <span className="text-xs text-muted-foreground">· Submitted {new Date(draft.submittedAt).toLocaleDateString("en-IN")}</span>}
               </div>
@@ -117,7 +117,7 @@ export default function ReportsPage() {
                       <div key={e.id} className="flex items-start justify-between gap-2 p-3 bg-muted/30 rounded-lg">
                         <div>
                           <p className="text-sm font-medium text-foreground">{e.title}</p>
-                          <p className="text-xs text-muted-foreground">{e.category.replace("_"," ")}</p>
+                          <p className="text-xs text-muted-foreground">{e.category.replace("_", " ")}</p>
                         </div>
                         {e.numericValue !== undefined && (
                           <span className="text-sm font-bold text-primary">{e.numericValue}</span>
@@ -135,9 +135,9 @@ export default function ReportsPage() {
                     const reviewer = MOCK_USERS.find((u) => u.id === log.reviewerUserId);
                     return (
                       <div key={log.id} className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg mb-2">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${log.action === "APPROVED" ? "bg-green-500" : log.action === "REJECTED" ? "bg-red-500" : "bg-yellow-500"}`} />
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${log.action === "APPROVED_FINAL" ? "bg-green-500" : log.action === "REJECTED_NEEDS_REVIEW" ? "bg-red-500" : "bg-yellow-500"}`} />
                         <div>
-                          <p className="text-xs font-medium text-foreground">{log.action.replace("_"," ")} by {reviewer?.name}</p>
+                          <p className="text-xs font-medium text-foreground">{log.action.replace("_", " ")} by {reviewer?.name}</p>
                           {log.message && <p className="text-xs text-muted-foreground">{log.message}</p>}
                         </div>
                       </div>

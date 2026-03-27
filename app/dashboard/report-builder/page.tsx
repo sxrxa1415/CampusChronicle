@@ -44,7 +44,7 @@ export default function ReportBuilderPage() {
   });
 
   const activeYear = MOCK_REPORTING_YEARS.find((y) => y.isActive)!;
-  const approvedDrafts = reportDrafts.filter((d) => ["APPROVED","SUBMITTED","UNDER_REVIEW"].includes(d.status));
+  const approvedDrafts = reportDrafts.filter((d) => ["APPROVED_FINAL", "PENDING_OFFICE", "PENDING_ADMIN"].includes(d.status));
 
   const handleAddSection = () => {
     if (!newSection.title.trim()) {
@@ -80,13 +80,13 @@ export default function ReportBuilderPage() {
     setGenerating(false);
     setGenerated(true);
     toast.success("Annual Report Generated!", {
-      description: "The institute annual report for 2023-24 is ready.",
+      description: "The institute annual report for 2025-26 is ready.",
     });
   };
 
   const deptStats = MOCK_DEPARTMENTS.map((d) => {
     const draft = reportDrafts.find((rd) => rd.departmentId === d.id);
-    const entries = metricEntries.filter((e) => e.departmentId === d.id && e.status === "APPROVED");
+    const entries = metricEntries.filter((e) => e.departmentId === d.id && e.status === "APPROVED_FINAL");
     return { ...d, status: draft?.status ?? "NOT_STARTED", entryCount: entries.length };
   });
 
@@ -124,7 +124,7 @@ export default function ReportBuilderPage() {
             <CheckCircle className="w-5 h-5 text-green-600" />
             <div>
               <p className="text-sm font-semibold text-green-700">Report Generated Successfully</p>
-              <p className="text-xs text-green-600">Annual Report 2023-24 · {approvedDrafts.length} departments included</p>
+              <p className="text-xs text-green-600">Annual Report 2025-26 · {approvedDrafts.length} departments included</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -194,12 +194,11 @@ export default function ReportBuilderPage() {
                 <div key={d.id} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-foreground">{d.code}</p>
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                      d.status === "APPROVED" ? "bg-green-100 text-green-700 border-green-200" :
-                      d.status === "UNDER_REVIEW" || d.status === "SUBMITTED" ? "bg-blue-100 text-blue-700 border-blue-200" :
-                      d.status === "DRAFT" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
-                      "bg-gray-100 text-gray-600 border-gray-200"
-                    }`}>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${d.status === "APPROVED_FINAL" ? "bg-green-100 text-green-700 border-green-200" :
+                        d.status === "PENDING_ADMIN" || d.status === "PENDING_OFFICE" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                          d.status === "DRAFT" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+                            "bg-gray-100 text-gray-600 border-gray-200"
+                      }`}>
                       {d.status.replace("_", " ")}
                     </span>
                   </div>
@@ -226,11 +225,10 @@ export default function ReportBuilderPage() {
                     key={t.value}
                     type="button"
                     onClick={() => setNewSection((f) => ({ ...f, sectionType: t.value }))}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                      newSection.sectionType === t.value
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${newSection.sectionType === t.value
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                    }`}
+                      }`}
                   >
                     <span>{t.icon}</span> {t.label}
                   </button>
@@ -257,7 +255,7 @@ export default function ReportBuilderPage() {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Report Preview — 2023-24</DialogTitle>
+            <DialogTitle>Report Preview — 2025-26</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="bg-sidebar text-sidebar-foreground p-8 rounded-xl text-center">

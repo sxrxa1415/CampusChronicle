@@ -35,6 +35,11 @@ export default function UploadPage() {
     description: "",
     numericValue: "",
     textualValue: "",
+    papersPublished: "",
+    competitionsDone: "",
+    tasksDone: "",
+    extraPay: "",
+    financialSpends: "",
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState<string[]>([]);
@@ -61,8 +66,15 @@ export default function UploadPage() {
       description: form.description,
       numericValue: form.numericValue ? Number(form.numericValue) : undefined,
       textualValue: form.textualValue || undefined,
+      studentTargets: form.category === "STUDENT_ACHIEVEMENT"
+        ? { papersPublished: Number(form.papersPublished), competitionsDone: Number(form.competitionsDone) }
+        : undefined,
+      staffTargets: form.category === "FACULTY_ACHIEVEMENT"
+        ? { tasksDone: Number(form.tasksDone), extraPay: Number(form.extraPay) }
+        : undefined,
+      financialSpends: ["FINANCIAL", "OTHER", "INFRASTRUCTURE"].includes(form.category) ? Number(form.financialSpends) : undefined,
       createdByUserId: currentUser?.id ?? "",
-      status: "PENDING",
+      status: "PENDING_HOD",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -78,7 +90,7 @@ export default function UploadPage() {
     });
 
     setSubmitted((prev) => [form.title, ...prev]);
-    setForm({ category: "", title: "", description: "", numericValue: "", textualValue: "" });
+    setForm({ category: "", title: "", description: "", numericValue: "", textualValue: "", papersPublished: "", competitionsDone: "", tasksDone: "", extraPay: "", financialSpends: "" });
     setLoading(false);
     toast.success("Entry submitted!", { description: `"${form.title}" is now pending review.` });
   };
@@ -122,11 +134,10 @@ export default function UploadPage() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setForm((f) => ({ ...f, category: cat.value }))}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                    form.category === cat.value
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${form.category === cat.value
                       ? cat.color + " ring-2 ring-offset-1 ring-primary/30"
                       : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                  }`}
+                    }`}
                 >
                   {cat.label}
                 </motion.button>
@@ -158,7 +169,7 @@ export default function UploadPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Numeric value */}
             <div className="space-y-2">
               <Label htmlFor="numeric">Numeric Value</Label>
@@ -181,6 +192,48 @@ export default function UploadPage() {
               />
             </div>
           </div>
+
+          {form.category === "STUDENT_ACHIEVEMENT" && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-4 bg-green-50/50 rounded-xl border border-green-100 space-y-4">
+              <h4 className="font-semibold text-sm text-green-800">Mentee Data (Student Targets)</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Papers Published</Label>
+                  <Input type="number" placeholder="0" value={form.papersPublished} onChange={e => setForm(f => ({ ...f, papersPublished: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Competitions Done</Label>
+                  <Input type="number" placeholder="0" value={form.competitionsDone} onChange={e => setForm(f => ({ ...f, competitionsDone: e.target.value }))} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {form.category === "FACULTY_ACHIEVEMENT" && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-4 bg-orange-50/50 rounded-xl border border-orange-100 space-y-4">
+              <h4 className="font-semibold text-sm text-orange-800">Staff Targets / Extra Tracking</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tasks Done (Non-teaching)</Label>
+                  <Input type="number" placeholder="0" value={form.tasksDone} onChange={e => setForm(f => ({ ...f, tasksDone: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Extra Pay Given ($)</Label>
+                  <Input type="number" placeholder="0" value={form.extraPay} onChange={e => setForm(f => ({ ...f, extraPay: e.target.value }))} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {["FINANCIAL", "OTHER", "INFRASTRUCTURE"].includes(form.category) && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-4 bg-red-50/50 rounded-xl border border-red-100 space-y-4">
+              <h4 className="font-semibold text-sm text-red-800">Staff & Organization Side Spending</h4>
+              <div className="space-y-2">
+                <Label>Financial Spends ($)</Label>
+                <Input type="number" placeholder="e.g. 500" value={form.financialSpends} onChange={e => setForm(f => ({ ...f, financialSpends: e.target.value }))} />
+              </div>
+            </motion.div>
+          )}
 
           {/* File upload hint */}
           <div className="border-2 border-dashed border-border rounded-xl p-5 text-center">
@@ -216,7 +269,7 @@ export default function UploadPage() {
             "Provide numeric values wherever applicable for KPI tracking.",
             "Entries submitted go to Pending status until reviewed by HOD/Admin.",
             "Rejected entries can be revised and resubmitted with corrections.",
-            "Deadline for 2023-24 report submissions: 31st March 2024.",
+            "Deadline for 2025-26 report submissions: 31st March 2024.",
           ].map((g, i) => (
             <li key={i} className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 shrink-0" />

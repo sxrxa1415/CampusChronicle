@@ -12,11 +12,11 @@ import { Eye, CheckCircle, XCircle, MessageSquare, RotateCcw, FileText, Clock, C
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  UNDER_REVIEW: "bg-purple-100 text-purple-700 border-purple-200",
-  SUBMITTED: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_ADMIN: "bg-purple-100 text-purple-700 border-purple-200",
+  PENDING_OFFICE: "bg-yellow-100 text-yellow-700 border-yellow-200",
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -29,7 +29,7 @@ export default function ReviewPage() {
   const [acting, setActing] = useState<string | null>(null);
 
   const reviewableDrafts = reportDrafts.filter((d) =>
-    ["SUBMITTED", "UNDER_REVIEW"].includes(d.status)
+    ["PENDING_OFFICE", "PENDING_ADMIN"].includes(d.status)
   );
   const allDrafts = reportDrafts;
 
@@ -39,12 +39,12 @@ export default function ReviewPage() {
   const draftEntries = draft ? metricEntries.filter((e) => draft.compiledMetricEntryIds.includes(e.id)) : [];
   const draftComments = draft ? comments.filter((c) => c.reportDraftId === draft.id) : [];
 
-  const doAction = async (action: "APPROVED" | "REJECTED" | "REVISION_REQUESTED") => {
+  const doAction = async (action: "APPROVED_FINAL" | "REJECTED_NEEDS_REVIEW" | "REVISION_REQUESTED") => {
     if (!draft) return;
     setActing(action);
     await new Promise((r) => setTimeout(r, 700));
 
-    const newStatus = action === "APPROVED" ? "APPROVED" : action === "REJECTED" ? "REJECTED" : "UNDER_REVIEW";
+    const newStatus = action === "APPROVED_FINAL" ? "APPROVED_FINAL" : action === "REJECTED_NEEDS_REVIEW" ? "REJECTED_NEEDS_REVIEW" : "PENDING_ADMIN";
     updateReportDraft(draft.id, { status: newStatus as any, updatedAt: new Date().toISOString() });
 
     addApprovalLog({
@@ -52,7 +52,7 @@ export default function ReviewPage() {
       reportDraftId: draft.id,
       reviewerUserId: currentUser?.id ?? "",
       action,
-      message: reviewNote || `${action.replace("_"," ")} by reviewer.`,
+      message: reviewNote || `${action.replace("_", " ")} by reviewer.`,
       createdAt: new Date().toISOString(),
     });
 
@@ -70,8 +70,8 @@ export default function ReviewPage() {
       id: `n_${Date.now()}`,
       userId: draft.createdByUserId,
       reportDraftId: draft.id,
-      title: `Report ${action === "APPROVED" ? "Approved" : action === "REJECTED" ? "Rejected" : "Revision Requested"}`,
-      message: reviewNote || `Your ${dept?.name} report was ${action.toLowerCase().replace("_"," ")} by the reviewer.`,
+      title: `Report ${action === "APPROVED_FINAL" ? "Approved" : action === "REJECTED_NEEDS_REVIEW" ? "Rejected" : "Revision Requested"}`,
+      message: reviewNote || `Your ${dept?.name} report was ${action.toLowerCase().replace("_", " ")} by the reviewer.`,
       isRead: false,
       createdAt: new Date().toISOString(),
     });
@@ -81,13 +81,13 @@ export default function ReviewPage() {
     setSelected(null);
 
     const messages: Record<string, string> = {
-      APPROVED: `${dept?.name} report approved successfully.`,
-      REJECTED: `${dept?.name} report rejected.`,
+      APPROVED_FINAL: `${dept?.name} report approved successfully.`,
+      REJECTED_NEEDS_REVIEW: `${dept?.name} report rejected.`,
       REVISION_REQUESTED: `Revision requested for ${dept?.name} report.`,
     };
     const toastFns: Record<string, (m: string, o: object) => void> = {
-      APPROVED: toast.success,
-      REJECTED: toast.error,
+      APPROVED_FINAL: toast.success,
+      REJECTED_NEEDS_REVIEW: toast.error,
       REVISION_REQUESTED: toast.warning,
     };
     (toastFns[action] ?? toast)(messages[action], { description: reviewNote || undefined });
@@ -98,7 +98,7 @@ export default function ReviewPage() {
       <motion.div variants={item}>
         <h2 className="text-xl font-bold text-foreground">Review Reports</h2>
         <p className="text-sm text-muted-foreground">
-          {reviewableDrafts.length} reports awaiting action · Academic Year 2023-24
+          {reviewableDrafts.length} reports awaiting action · Academic Year 2025-26
         </p>
       </motion.div>
 
@@ -156,7 +156,7 @@ export default function ReviewPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">Submitted by {submitter?.name}</p>
                       {draft.submittedAt && (
-                        <span className="text-xs text-muted-foreground">· {new Date(draft.submittedAt).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}</span>
+                        <span className="text-xs text-muted-foreground">· {new Date(draft.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
                       )}
                     </div>
                   </div>
@@ -200,7 +200,7 @@ export default function ReviewPage() {
                 )}
 
                 {/* Review actions */}
-                {["SUBMITTED","UNDER_REVIEW"].includes(draft.status) && (
+                {["PENDING_OFFICE", "PENDING_ADMIN"].includes(draft.status) && (
                   <div className="px-5 pb-5 border-t border-border pt-4 space-y-3">
                     <p className="text-xs font-semibold text-foreground">Review Note (optional)</p>
                     <Textarea
@@ -212,16 +212,16 @@ export default function ReviewPage() {
                     />
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" className="bg-green-600 hover:bg-green-700 flex-1"
-                        disabled={!!acting} onClick={() => doAction("APPROVED")}>
-                        {acting === "APPROVED" ? "Approving..." : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Approve</>}
+                        disabled={!!acting} onClick={() => doAction("APPROVED_FINAL")}>
+                        {acting === "APPROVED_FINAL" ? "Approving..." : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Approve</>}
                       </Button>
                       <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex-1"
                         disabled={!!acting} onClick={() => doAction("REVISION_REQUESTED")}>
                         {acting === "REVISION_REQUESTED" ? "Requesting..." : <><RotateCcw className="w-3.5 h-3.5 mr-1.5" />Request Revision</>}
                       </Button>
                       <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 flex-1"
-                        disabled={!!acting} onClick={() => doAction("REJECTED")}>
-                        {acting === "REJECTED" ? "Rejecting..." : <><XCircle className="w-3.5 h-3.5 mr-1.5" />Reject</>}
+                        disabled={!!acting} onClick={() => doAction("REJECTED_NEEDS_REVIEW")}>
+                        {acting === "REJECTED_NEEDS_REVIEW" ? "Rejecting..." : <><XCircle className="w-3.5 h-3.5 mr-1.5" />Reject</>}
                       </Button>
                     </div>
                   </div>

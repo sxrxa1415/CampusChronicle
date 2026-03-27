@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const STATUS_COLORS: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  SUBMITTED: "bg-blue-100 text-blue-700 border-blue-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_HOD: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  PENDING_OFFICE: "bg-blue-100 text-blue-700 border-blue-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 const CAT_COLORS: Record<string, string> = {
@@ -40,9 +40,9 @@ export function DeptHeadDashboard() {
   const myKpis = MOCK_KPIS.filter((k) => k.departmentId === currentUser?.departmentId);
   const myNotifs = notifications.filter((n) => n.userId === currentUser?.id && !n.isRead).length;
 
-  const approved = deptEntries.filter((e) => e.status === "APPROVED").length;
-  const pending = deptEntries.filter((e) => e.status === "PENDING").length;
-  const rejected = deptEntries.filter((e) => e.status === "REJECTED").length;
+  const approved = deptEntries.filter((e) => ["PENDING_OFFICE", "PENDING_ADMIN", "APPROVED_FINAL"].includes(e.status)).length;
+  const pending = deptEntries.filter((e) => e.status === "PENDING_HOD").length;
+  const rejected = deptEntries.filter((e) => e.status === "REJECTED_NEEDS_REVIEW").length;
 
   const radarData = myKpis.map((k) => ({ subject: k.kpiName.split(" ").slice(0, 2).join(" "), value: k.kpiValue, fullMark: 100 }));
 
@@ -60,7 +60,7 @@ export function DeptHeadDashboard() {
       <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground">Department Dashboard</h2>
-          <p className="text-sm text-muted-foreground">{dept?.name ?? "Department"} · 2023-24</p>
+          <p className="text-sm text-muted-foreground">{dept?.name ?? "Department"} · 2025-26</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/upload")}>
@@ -86,10 +86,10 @@ export function DeptHeadDashboard() {
           variants={item}
           className={cn(
             "flex items-center justify-between p-4 rounded-xl border",
-            myDraft.status === "APPROVED" ? "bg-green-50 border-green-200" :
-            myDraft.status === "UNDER_REVIEW" ? "bg-blue-50 border-blue-200" :
-            myDraft.status === "REJECTED" ? "bg-red-50 border-red-200" :
-            "bg-yellow-50 border-yellow-200"
+            myDraft.status === "APPROVED_FINAL" ? "bg-green-50 border-green-200" :
+              myDraft.status === "PENDING_ADMIN" ? "bg-blue-50 border-blue-200" :
+                myDraft.status === "REJECTED_NEEDS_REVIEW" ? "bg-red-50 border-red-200" :
+                  "bg-yellow-50 border-yellow-200"
           )}
         >
           <div>
@@ -102,7 +102,7 @@ export function DeptHeadDashboard() {
                 : "Draft not yet submitted"}
             </p>
           </div>
-          <Badge className={`border ${STATUS_COLORS[myDraft.status] ?? STATUS_COLORS.PENDING}`}>
+          <Badge className={`border ${STATUS_COLORS[myDraft.status] ?? STATUS_COLORS.PENDING_HOD}`}>
             {myDraft.status.replace("_", " ")}
           </Badge>
         </motion.div>
@@ -111,7 +111,7 @@ export function DeptHeadDashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <motion.div variants={item} className="bg-card border border-border rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">KPI Radar — 2023-24</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">KPI Radar — 2025-26</h3>
           <ResponsiveContainer width="100%" height={240}>
             <RadarChart data={radarData}>
               <PolarGrid />
@@ -131,7 +131,7 @@ export function DeptHeadDashboard() {
               <XAxis dataKey="category" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
-              <Bar dataKey="count" fill="#6366f1" radius={[3,3,0,0]} name="Entries" />
+              <Bar dataKey="count" fill="#6366f1" radius={[3, 3, 0, 0]} name="Entries" />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -157,7 +157,7 @@ export function DeptHeadDashboard() {
                   )}
                 </div>
               </div>
-              <Badge className={`text-[11px] border ml-3 shrink-0 ${STATUS_COLORS[entry.status] ?? STATUS_COLORS.PENDING}`}>
+              <Badge className={`text-[11px] border ml-3 shrink-0 ${STATUS_COLORS[entry.status] ?? STATUS_COLORS.PENDING_HOD}`}>
                 {entry.status}
               </Badge>
             </div>

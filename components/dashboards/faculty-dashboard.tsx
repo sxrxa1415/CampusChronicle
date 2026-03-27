@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 const STATUS_COLORS: Record<string, string> = {
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  SUBMITTED: "bg-blue-100 text-blue-700 border-blue-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  PENDING_HOD: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  PENDING_OFFICE: "bg-blue-100 text-blue-700 border-blue-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 export function FacultyDashboard() {
@@ -24,9 +24,9 @@ export function FacultyDashboard() {
 
   const myEntries = metricEntries.filter((e) => e.createdByUserId === currentUser?.id);
   const dept = MOCK_DEPARTMENTS.find((d) => d.id === currentUser?.departmentId);
-  const approved = myEntries.filter((e) => e.status === "APPROVED").length;
-  const pending = myEntries.filter((e) => e.status === "PENDING").length;
-  const rejected = myEntries.filter((e) => e.status === "REJECTED").length;
+  const approved = myEntries.filter((e) => e.status === "APPROVED_FINAL").length;
+  const pending = myEntries.filter((e) => e.status === "PENDING_HOD").length;
+  const rejected = myEntries.filter((e) => e.status === "REJECTED_NEEDS_REVIEW").length;
   const myNotifs = notifications.filter((n) => n.userId === currentUser?.id && !n.isRead);
 
   // Trend over simulated months
@@ -39,6 +39,11 @@ export function FacultyDashboard() {
     { month: "Jan", entries: myEntries.length },
   ];
 
+  // Target summaries
+  const totalMenteePapers = myEntries.reduce((sum, e) => sum + (e.studentTargets?.papersPublished || 0), 0);
+  const totalStaffPay = myEntries.reduce((sum, e) => sum + (e.staffTargets?.extraPay || 0), 0);
+  const totalFinancials = myEntries.reduce((sum, e) => sum + (e.financialSpends || 0), 0);
+
   return (
     <div className="space-y-6">
       <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -47,14 +52,15 @@ export function FacultyDashboard() {
           <p className="text-sm text-muted-foreground">{dept?.name} · {currentUser?.name}</p>
         </div>
         <Button size="sm" onClick={() => router.push("/dashboard/upload")}>
-          <UploadCloud className="w-4 h-4 mr-2" /> Upload Entry
+          <UploadCloud className="w-4 h-4 mr-2" /> Submit Mentee Data / Spends
         </Button>
       </motion.div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard title="My Entries" value={myEntries.length} icon={BookOpen} color="blue" />
-        <StatCard title="Approved" value={approved} icon={CheckSquare} color="green" />
-        <StatCard title="Pending" value={pending} icon={Clock} color="orange" subtitle="Awaiting review" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="My Submissions" value={myEntries.length} icon={BookOpen} color="blue" />
+        <StatCard title="Mentee Papers" value={totalMenteePapers} icon={CheckSquare} color="green" subtitle="Published" />
+        <StatCard title="Extra Pay" value={`$${totalStaffPay}`} icon={CheckSquare} color="purple" subtitle="From tasks" />
+        <StatCard title="My Spends" value={`$${totalFinancials}`} icon={Clock} color="orange" subtitle="Submitted to HOD" />
       </div>
 
       {/* Unread notifications */}
@@ -104,8 +110,15 @@ export function FacultyDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{entry.title}</p>
                   <p className="text-[11px] text-muted-foreground">{entry.category.replace("_", " ")} · {new Date(entry.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}</p>
+                  {(entry.studentTargets || entry.staffTargets || entry.financialSpends) && (
+                    <div className="flex gap-2 mt-1">
+                      {entry.studentTargets && <span className="text-[10px] text-green-700 bg-green-50 px-1.5 rounded">Papers: {entry.studentTargets.papersPublished}</span>}
+                      {entry.staffTargets && <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 rounded">Extra Pay: ${entry.staffTargets.extraPay}</span>}
+                      {entry.financialSpends && <span className="text-[10px] text-red-700 bg-red-50 px-1.5 rounded">Spends: ${entry.financialSpends}</span>}
+                    </div>
+                  )}
                 </div>
-                <Badge className={`text-[11px] border ml-2 shrink-0 ${STATUS_COLORS[entry.status] ?? STATUS_COLORS.PENDING}`}>
+                <Badge className={`text-[11px] border ml-2 shrink-0 ${STATUS_COLORS[entry.status] ?? STATUS_COLORS.PENDING_HOD}`}>
                   {entry.status}
                 </Badge>
               </div>
@@ -130,7 +143,7 @@ export function FacultyDashboard() {
             Entries Requiring Revision
           </h3>
           <div className="space-y-3">
-            {myEntries.filter((e) => e.status === "REJECTED").map((entry) => (
+            {myEntries.filter((e) => e.status === "REJECTED_NEEDS_REVIEW").map((entry) => (
               <div key={entry.id} className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm font-medium text-foreground">{entry.title}</p>
                 {entry.reviewerComment && (

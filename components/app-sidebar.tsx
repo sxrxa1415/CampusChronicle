@@ -7,7 +7,7 @@ import type { InstituteRole } from "@/lib/types";
 import {
   LayoutDashboard, FileText, UploadCloud, ClipboardCheck,
   Settings, GraduationCap, BarChart3, Users, BookOpen,
-  FolderOpen, CheckSquare, PenSquare, ChevronRight
+  FolderOpen, CheckSquare, PenSquare, ChevronRight, ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
@@ -21,17 +21,18 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN","DEPARTMENT_HEAD","FACULTY","REVIEWER"] },
-  { label: "Data Upload", href: "/dashboard/upload", icon: UploadCloud, roles: ["FACULTY","DEPARTMENT_HEAD"] },
-  { label: "My Entries", href: "/dashboard/entries", icon: FolderOpen, roles: ["FACULTY","DEPARTMENT_HEAD"] },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "DEPARTMENT_HEAD", "FACULTY", "REVIEWER"] },
+  { label: "Data Upload", href: "/dashboard/upload", icon: UploadCloud, roles: ["FACULTY", "DEPARTMENT_HEAD"] },
+  { label: "My Entries", href: "/dashboard/entries", icon: FolderOpen, roles: ["FACULTY", "DEPARTMENT_HEAD"] },
   { label: "Draft & Preview", href: "/dashboard/draft", icon: FileText, roles: ["DEPARTMENT_HEAD"] },
   { label: "Review Reports", href: "/dashboard/review", icon: CheckSquare, roles: ["REVIEWER"] },
   { label: "Report Builder", href: "/dashboard/report-builder", icon: PenSquare, roles: ["ADMIN"] },
-  { label: "All Reports", href: "/dashboard/reports", icon: BookOpen, roles: ["ADMIN","REVIEWER"] },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, roles: ["ADMIN","DEPARTMENT_HEAD","REVIEWER"] },
-  { label: "Departments", href: "/dashboard/departments", icon: Users, roles: ["ADMIN"] },
+  { label: "All Reports", href: "/dashboard/reports", icon: BookOpen, roles: ["ADMIN", "REVIEWER"] },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, roles: ["ADMIN", "DEPARTMENT_HEAD", "REVIEWER", "FACULTY"] },
+  { label: "User Management", href: "/dashboard/users", icon: Users, roles: ["ADMIN"] },
+  { label: "Access Maps", href: "/dashboard/team", icon: ShieldCheck, roles: ["ADMIN", "DEPARTMENT_HEAD"] },
   { label: "Templates", href: "/dashboard/templates", icon: ClipboardCheck, roles: ["ADMIN"] },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN","DEPARTMENT_HEAD","FACULTY","REVIEWER"] },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "DEPARTMENT_HEAD", "FACULTY", "REVIEWER"] },
 ];
 
 export function AppSidebar() {
@@ -64,7 +65,7 @@ export function AppSidebar() {
             {currentUser.avatar}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-sidebar-foreground truncate">{currentUser.name.split(" ").slice(0,2).join(" ")}</p>
+            <p className="text-xs font-semibold text-sidebar-foreground truncate">{currentUser.name.split(" ").slice(0, 2).join(" ")}</p>
             <p className="text-[10px] text-sidebar-foreground/50 truncate">{currentUser.role.replace("_", " ")}</p>
           </div>
           {unread > 0 && (
@@ -100,7 +101,7 @@ export function AppSidebar() {
       </nav>
 
       <div className="px-4 py-3 border-t border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground/30 text-center">v1.0.0 · Academic Year 2023-24</p>
+        <p className="text-[10px] text-sidebar-foreground/30 text-center">v1.0.0 · Academic Year 2025-26</p>
       </div>
     </aside>
   );

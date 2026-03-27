@@ -12,10 +12,10 @@ import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-  SUBMITTED: "bg-blue-100 text-blue-700 border-blue-200",
-  UNDER_REVIEW: "bg-purple-100 text-purple-700 border-purple-200",
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  PENDING_OFFICE: "bg-blue-100 text-blue-700 border-blue-200",
+  PENDING_ADMIN: "bg-purple-100 text-purple-700 border-purple-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -33,7 +33,7 @@ export default function DraftPage() {
   const myDraft = reportDrafts.find((d) => d.departmentId === currentUser?.departmentId && d.reportingYearId === activeYear.id);
   const draftEntries = myDraft
     ? metricEntries.filter((e) => myDraft.compiledMetricEntryIds.includes(e.id))
-    : metricEntries.filter((e) => e.departmentId === currentUser?.departmentId && e.status === "APPROVED");
+    : metricEntries.filter((e) => e.departmentId === currentUser?.departmentId && e.status === "APPROVED_FINAL");
 
   const draftVersions = myDraft ? versions.filter((v) => v.reportDraftId === myDraft.id) : [];
   const draftComments = myDraft ? comments.filter((c) => c.reportDraftId === myDraft.id) : [];
@@ -41,7 +41,7 @@ export default function DraftPage() {
   const handleCreateDraft = () => {
     const id = `rd_${Date.now()}`;
     const approvedIds = metricEntries
-      .filter((e) => e.departmentId === currentUser?.departmentId && e.status === "APPROVED")
+      .filter((e) => e.departmentId === currentUser?.departmentId && e.status === "APPROVED_FINAL")
       .map((e) => e.id);
 
     addReportDraft({
@@ -73,7 +73,7 @@ export default function DraftPage() {
     await new Promise((r) => setTimeout(r, 800));
 
     updateReportDraft(myDraft.id, {
-      status: "SUBMITTED",
+      status: "PENDING_OFFICE",
       submittedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

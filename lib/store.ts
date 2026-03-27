@@ -28,12 +28,16 @@ export interface Toast {
 }
 
 interface AppStore {
-  // Auth
+  // Auth & Users
+  users: InstituteUser[];
   currentUser: InstituteUser | null;
   login: (user: InstituteUser) => void;
   logout: () => void;
   updateUserTheme: (theme: "light" | "dark") => void;
   updateUserNotifications: (enabled: boolean) => void;
+  updateUserAccessControls: (userId: string, updates: Partial<InstituteUser>) => void;
+  addUser: (user: InstituteUser) => void;
+  deleteUser: (id: string) => void;
 
   // Metric Entries
   metricEntries: DepartmentMetricEntry[];
@@ -84,6 +88,7 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set) => ({
+  users: [...MOCK_USERS],
   currentUser: null,
   login: (user) => {
     set({ currentUser: user });
@@ -105,6 +110,15 @@ export const useAppStore = create<AppStore>((set) => ({
       }
     }
   },
+  updateUserAccessControls: (userId, updates) => set((s) => ({
+    users: s.users.map((u) => u.id === userId ? { ...u, ...updates } : u),
+    currentUser: s.currentUser?.id === userId ? { ...s.currentUser, ...updates } : s.currentUser,
+  })),
+  addUser: (user) => set((s) => ({ users: [user, ...s.users] })),
+  deleteUser: (id) => set((s) => ({
+    users: s.users.filter((u) => u.id !== id),
+    currentUser: s.currentUser?.id === id ? null : s.currentUser
+  })),
   updateUserTheme: (theme) =>
     set((s) => ({
       currentUser: s.currentUser ? { ...s.currentUser, theme } : null,
@@ -202,4 +216,4 @@ export const useAppStore = create<AppStore>((set) => ({
 }));
 
 export const getUserById = (id: string) =>
-  MOCK_USERS.find((u) => u.id === id);
+  useAppStore.getState().users.find((u) => u.id === id);
