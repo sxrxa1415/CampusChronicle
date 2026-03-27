@@ -26,12 +26,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: "My Entries", href: "/dashboard/entries", icon: FolderOpen, roles: ["FACULTY", "DEPARTMENT_HEAD"] },
   { label: "Draft & Preview", href: "/dashboard/draft", icon: FileText, roles: ["DEPARTMENT_HEAD"] },
   { label: "Review Reports", href: "/dashboard/review", icon: CheckSquare, roles: ["REVIEWER"] },
-  { label: "Report Builder", href: "/dashboard/report-builder", icon: PenSquare, roles: ["ADMIN"] },
+  // { label: "Report Builder", href: "/dashboard/report-builder", icon: PenSquare, roles: ["ADMIN"] },
   { label: "All Reports", href: "/dashboard/reports", icon: BookOpen, roles: ["ADMIN", "REVIEWER"] },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, roles: ["ADMIN", "DEPARTMENT_HEAD", "REVIEWER", "FACULTY"] },
   { label: "User Management", href: "/dashboard/users", icon: Users, roles: ["ADMIN"] },
   { label: "Access Maps", href: "/dashboard/team", icon: ShieldCheck, roles: ["ADMIN", "DEPARTMENT_HEAD"] },
-  { label: "Templates", href: "/dashboard/templates", icon: ClipboardCheck, roles: ["ADMIN"] },
+  { label: "Templates Map", href: "/dashboard/templates", icon: ClipboardCheck, roles: ["ADMIN", "DEPARTMENT_HEAD", "FACULTY", "REVIEWER"] },
   { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "DEPARTMENT_HEAD", "FACULTY", "REVIEWER"] },
 ];
 

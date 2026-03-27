@@ -1,5 +1,6 @@
 "use client";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type {
   InstituteUser,
   DepartmentMetricEntry,
@@ -8,6 +9,8 @@ import type {
   ReportApprovalLog,
   ReportVersion,
   ReportTemplateSection,
+  InstituteReportTemplate,
+  ReportSectionType,
   ReportNotification,
 } from "./types";
 import {
@@ -17,6 +20,7 @@ import {
   MOCK_COMMENTS,
   MOCK_APPROVAL_LOGS,
   MOCK_VERSIONS,
+  MOCK_REPORT_TEMPLATES,
   MOCK_TEMPLATE_SECTIONS,
   MOCK_NOTIFICATIONS,
 } from "./mock-data";
@@ -67,11 +71,19 @@ interface AppStore {
   versions: ReportVersion[];
   addVersion: (version: ReportVersion) => void;
 
-  // Template Sections
+  // Templates
+  reportTemplates: InstituteReportTemplate[];
+  addReportTemplate: (template: InstituteReportTemplate) => void;
+  updateReportTemplate: (id: string, updates: Partial<InstituteReportTemplate>) => void;
+  deleteReportTemplate: (id: string) => void;
+
+  // Template Sections & Report Builder
   templateSections: ReportTemplateSection[];
   addTemplateSection: (section: ReportTemplateSection) => void;
   updateTemplateSection: (id: string, updates: Partial<ReportTemplateSection>) => void;
   deleteTemplateSection: (id: string) => void;
+  reorderTemplateSections: (newOrder: ReportTemplateSection[]) => void;
+  loadTemplateIntoBuilder: (templateId: string) => void;
 
   // Notifications
   notifications: ReportNotification[];
@@ -87,29 +99,13 @@ interface AppStore {
   endTutorial: () => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
-  users: [...MOCK_USERS],
-  currentUser: null,
-  login: (user) => {
-    set({ currentUser: user });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-      } catch (e) {
-        console.error('[v0] Failed to save user to localStorage:', e);
-      }
-    }
-  },
-  logout: () => {
-    set({ currentUser: null });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem('currentUser');
-      } catch (e) {
-        console.error('[v0] Failed to remove user from localStorage:', e);
-      }
-    }
-  },
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set) => ({
+      users: [...MOCK_USERS],
+      currentUser: null,
+      login: (user) => set({ currentUser: user }),
+      logout: () => set({ currentUser: null }),
   updateUserAccessControls: (userId, updates) => set((s) => ({
     users: s.users.map((u) => u.id === userId ? { ...u, ...updates } : u),
     currentUser: s.currentUser?.id === userId ? { ...s.currentUser, ...updates } : s.currentUser,
@@ -166,6 +162,15 @@ export const useAppStore = create<AppStore>((set) => ({
   addVersion: (version) =>
     set((s) => ({ versions: [version, ...s.versions] })),
 
+  reportTemplates: MOCK_REPORT_TEMPLATES,
+  addReportTemplate: (t) => set((s) => ({ reportTemplates: [t, ...s.reportTemplates] })),
+  updateReportTemplate: (id, updates) => set((s) => ({
+    reportTemplates: s.reportTemplates.map((t) => t.id === id ? { ...t, ...updates } : t)
+  })),
+  deleteReportTemplate: (id) => set((s) => ({
+    reportTemplates: s.reportTemplates.filter((t) => t.id !== id)
+  })),
+
   templateSections: MOCK_TEMPLATE_SECTIONS,
   addTemplateSection: (section) =>
     set((s) => ({ templateSections: [section, ...s.templateSections] })),
@@ -179,6 +184,21 @@ export const useAppStore = create<AppStore>((set) => ({
     set((s) => ({
       templateSections: s.templateSections.filter((t) => t.id !== id),
     })),
+  reorderTemplateSections: (newOrder) => set({ templateSections: newOrder }),
+  loadTemplateIntoBuilder: (templateId) => set((s) => {
+    const template = s.reportTemplates.find(t => t.id === templateId);
+    if (!template) return s;
+    const newSections = template.sections.map((secType: string, i: number) => ({
+      id: `ts_gen_${Date.now()}_${i}`,
+      sectionType: secType as ReportSectionType,
+      title: secType.charAt(0) + secType.toLowerCase().slice(1) + " Segment",
+      description: `Auto-injected ${secType} section derived from ${template.name}`,
+      layoutJson: '{"cols":2}',
+      createdByAdminId: s.currentUser?.id || "u1",
+      createdAt: new Date().toISOString()
+    }));
+    return { templateSections: newSections };
+  }),
 
   notifications: MOCK_NOTIFICATIONS,
   addNotification: (notification) =>
@@ -213,7 +233,12 @@ export const useAppStore = create<AppStore>((set) => ({
     set((s) => ({
       toasts: s.toasts.filter((t) => t.id !== id),
     })),
-}));
+    }),
+    {
+      name: "campus-chronicle-storage",
+    }
+  )
+);
 
 export const getUserById = (id: string) =>
   useAppStore.getState().users.find((u) => u.id === id);

@@ -116,6 +116,17 @@ export type ReportSectionType =
   | "EVENTS"
   | "CUSTOM";
 
+export interface InstituteReportTemplate {
+  id: string;
+  name: string;
+  description: string;
+  targetCategory?: ReportMetricCategory;
+  sections: ReportSectionType[];
+  usage: number;
+  createdByAdminId: string;
+  createdAt: string;
+}
+
 export interface ReportTemplateSection {
   id: string;
   sectionType: ReportSectionType;

@@ -6,6 +6,7 @@ import type {
   DepartmentMetricEntry,
   DepartmentKPI,
   ReportTemplateSection,
+  InstituteReportTemplate,
   DepartmentReportDraft,
   ReportComment,
   ReportApprovalLog,
@@ -155,6 +156,27 @@ export const MOCK_KPIS: DepartmentKPI[] = [
   { id: "kpi10", departmentId: "dept3", reportingYearId: "ry1", kpiName: "Placement Rate", kpiValue: 75, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
 ];
 
+export const MOCK_REPORT_TEMPLATES: InstituteReportTemplate[] = [
+  {
+    id: "rt1", name: "Standard Academic Format", description: "Use this when uploading standard academic metrics like Pass Percentages.",
+    targetCategory: "ACADEMIC",
+    sections: ["COVER", "ACADEMIC"],
+    usage: 128, createdByAdminId: "u1", createdAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "rt2", name: "Research Publication Format", description: "All research papers MUST include the DOI link in the description block.",
+    targetCategory: "RESEARCH",
+    sections: ["COVER", "RESEARCH"],
+    usage: 45, createdByAdminId: "u1", createdAt: "2024-02-01T00:00:00Z"
+  },
+  {
+    id: "rt3", name: "Financial Audit Guidelines", description: "For infrastructure/grants, explicitly attach the expenditure receipt totals.",
+    targetCategory: "FINANCIAL",
+    sections: ["COVER", "FINANCIAL"],
+    usage: 67, createdByAdminId: "u1", createdAt: "2024-03-01T10:00:00Z"
+  }
+];
+
 export const MOCK_TEMPLATE_SECTIONS: ReportTemplateSection[] = [
   { id: "ts1", sectionType: "COVER", title: "Cover Page", description: "Institute logo, name, and academic year", layoutJson: '{"cols":1,"align":"center"}', createdByAdminId: "u1", createdAt: "2024-01-01T00:00:00Z" },
   { id: "ts2", sectionType: "ACADEMIC", title: "Academic Performance", description: "Pass percentages, rank holders, and results", layoutJson: '{"cols":2,"charts":true}', createdByAdminId: "u1", createdAt: "2024-01-01T00:00:00Z" },
@@ -168,7 +190,7 @@ export const MOCK_TEMPLATE_SECTIONS: ReportTemplateSection[] = [
 export const MOCK_REPORT_DRAFTS: DepartmentReportDraft[] = [
   {
     id: "rd1", departmentId: "dept1", reportingYearId: "ry1",
-    compiledMetricEntryIds: ["me1","me2","me3","me4","me6"],
+    compiledMetricEntryIds: ["me1", "me2", "me3", "me4", "me6"],
     status: "PENDING_ADMIN",
     submittedAt: "2024-03-01T10:00:00Z",
     createdByUserId: "u2",
@@ -176,7 +198,7 @@ export const MOCK_REPORT_DRAFTS: DepartmentReportDraft[] = [
   },
   {
     id: "rd2", departmentId: "dept2", reportingYearId: "ry1",
-    compiledMetricEntryIds: ["me7","me8"],
+    compiledMetricEntryIds: ["me7", "me8"],
     status: "PENDING_OFFICE",
     submittedAt: "2024-03-05T10:00:00Z",
     createdByUserId: "u5",
@@ -220,8 +242,8 @@ export const MOCK_VERSIONS: ReportVersion[] = [
 export const MOCK_ANNUAL_REPORT: InstituteAnnualReport = {
   id: "ar1",
   reportingYearId: "ry1",
-  departmentReportDraftIds: ["rd1","rd2","rd3","rd4"],
-  templateSectionIds: ["ts1","ts2","ts3","ts4","ts5","ts6","ts7"],
+  departmentReportDraftIds: ["rd1", "rd2", "rd3", "rd4"],
+  templateSectionIds: ["ts1", "ts2", "ts3", "ts4", "ts5", "ts6", "ts7"],
   status: "GENERATED",
   generatedAt: "2024-03-15T10:00:00Z",
 };

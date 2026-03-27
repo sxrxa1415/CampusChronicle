@@ -31,8 +31,7 @@ const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 
 export default function ReportBuilderPage() {
-  const { templateSections, addTemplateSection, updateTemplateSection, deleteTemplateSection, metricEntries, reportDrafts } = useAppStore();
-  const [items, setItems] = useState(templateSections);
+  const { templateSections, addTemplateSection, deleteTemplateSection, reorderTemplateSections, metricEntries, reportDrafts } = useAppStore();
   const [showAdd, setShowAdd] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -62,7 +61,6 @@ export default function ReportBuilderPage() {
       createdAt: new Date().toISOString(),
     };
     addTemplateSection(section);
-    setItems((prev) => [section, ...prev]);
     setNewSection({ sectionType: "CUSTOM", title: "", description: "" });
     setShowAdd(false);
     toast.success("Section added to template");
@@ -70,7 +68,6 @@ export default function ReportBuilderPage() {
 
   const handleDelete = (id: string) => {
     deleteTemplateSection(id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
     toast.success("Section removed");
   };
 
@@ -146,15 +143,15 @@ export default function ReportBuilderPage() {
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />
                 <p className="text-sm font-semibold text-foreground">Template Sections</p>
-                <Badge variant="secondary" className="text-[11px]">{items.length}</Badge>
+                <Badge variant="secondary" className="text-[11px]">{templateSections.length}</Badge>
               </div>
               <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
                 <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Section
               </Button>
             </div>
 
-            <Reorder.Group axis="y" values={items} onReorder={setItems} className="divide-y divide-border">
-              {items.map((section) => {
+            <Reorder.Group axis="y" values={templateSections} onReorder={reorderTemplateSections} className="divide-y divide-border">
+              {templateSections.map((section) => {
                 const typeInfo = SECTION_TYPES.find((t) => t.value === section.sectionType);
                 return (
                   <Reorder.Item key={section.id} value={section}>
@@ -262,7 +259,7 @@ export default function ReportBuilderPage() {
               <h1 className="text-2xl font-bold"></h1>
               <p className="text-sidebar-foreground/70">Annual Report 2025-26</p>
             </div>
-            {items.map((section, idx) => (
+            {templateSections.map((section, idx) => (
               <div key={section.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold">{idx + 1}</span>
