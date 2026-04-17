@@ -45,10 +45,13 @@ export async function GET(
   });
 
   if (!user) {
-    return NextResponse.json(
-      { success: false, message: "User not found." },
+    const response = NextResponse.json(
+      { success: false, message: "User session expired or user not found." } as MeErrorResponse,
       { status: 401 },
     );
+    response.cookies.delete("cc-user-id");
+    response.cookies.delete("cc-token");
+    return response;
   }
 
   return NextResponse.json({
@@ -66,5 +69,5 @@ export async function GET(
       attachedDepartmentIds: user.attachedDepartments.map((d) => d.departmentId),
       menteeIds: user.menteeStudents.map((m) => m.studentId),
     },
-  });
+  } as MeSuccessResponse);
 }
