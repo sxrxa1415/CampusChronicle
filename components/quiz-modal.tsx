@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
 
 interface Question {
   id: string;
@@ -25,7 +25,7 @@ interface QuizModalProps {
 }
 
 export function QuizModal({ isOpen, onClose, quiz }: QuizModalProps) {
-  const { showToast } = useAppStore();
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [showResults, setShowResults] = useState(false);
@@ -63,7 +63,7 @@ export function QuizModal({ isOpen, onClose, quiz }: QuizModalProps) {
 
   const handleFinish = () => {
     const score = calculateScore();
-    showToast(`Quiz completed! Score: ${score.toFixed(0)}%`, 'success');
+    toast.success(`Quiz completed! Score: ${score.toFixed(0)}%`);
     onClose();
   };
 

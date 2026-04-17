@@ -1,305 +1,428 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { MOCK_DEPARTMENTS, MOCK_REPORTING_YEARS } from "@/lib/mock-data";
+import { api } from "@/lib/api-client";
+import type { ApiEntry } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Trash2, Eye, Filter, CheckCircle, Clock, XCircle, RefreshCw } from "lucide-react";
-import { Timeline } from "@/components/timeline";
+import {
+  FolderOpen, Search, CheckCircle, XCircle, Eye, Clock,
+  ChevronDown, Filter, ArrowUpDown, Building2
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
 const STATUS_STYLES: Record<string, string> = {
-  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
+  DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
   PENDING_HOD: "bg-yellow-100 text-yellow-700 border-yellow-200",
   PENDING_OFFICE: "bg-blue-100 text-blue-700 border-blue-200",
+  PENDING_ADMIN: "bg-purple-100 text-purple-700 border-purple-200",
+  APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
   REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
-const STATUS_ICONS: Record<string, React.ElementType> = {
-  APPROVED_FINAL: CheckCircle,
-  PENDING_HOD: Clock,
-  PENDING_OFFICE: RefreshCw,
-  REJECTED_NEEDS_REVIEW: XCircle,
+const CATEGORY_LABELS: Record<string, string> = {
+  ACADEMIC: "Academic",
+  RESEARCH: "Research",
+  STUDENT_ACHIEVEMENT: "Student Achievement",
+  FACULTY_ACHIEVEMENT: "Faculty Achievement",
+  EXTRACURRICULAR: "Extracurricular",
+  INFRASTRUCTURE: "Infrastructure",
+  FINANCIAL: "Financial",
+  OTHER: "Other",
 };
 
-const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
 
 export default function EntriesPage() {
-  const { currentUser, metricEntries, deleteMetricEntry, updateMetricEntry, addApprovalLog } = useAppStore();
+  const { currentUser } = useAppStore();
+  const [entries, setEntries] = useState<ApiEntry[]>([]);
   const [search, setSearch] = useState("");
-  const [filterYear, setFilterYear] = useState("ALL");
-  const [filterCat, setFilterCat] = useState("ALL");
-  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [deptFilter, setDeptFilter] = useState("ALL");
+  const [departments, setDepartments] = useState<ApiDepartment[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+  const [acting, setActing] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const isAdmin = currentUser?.role === "ADMIN";
-  const isDeptHead = currentUser?.role === "DEPARTMENT_HEAD";
-
-  const entries = metricEntries.filter((e) => {
-    const matchDept = isAdmin ? true : e.departmentId === currentUser?.departmentId;
-    const matchYear = filterYear === "ALL" || e.reportingYearId === filterYear;
-    const matchSearch = !search || e.title.toLowerCase().includes(search.toLowerCase()) || e.category.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCat === "ALL" || e.category === filterCat;
-    const matchStatus = filterStatus === "ALL" || e.status === filterStatus;
-    return matchDept && matchYear && matchSearch && matchCat && matchStatus;
-  });
-
-  const selectedEntry = entries.find((e) => e.id === selected);
-
-  const handleDelete = (id: string, title: string) => {
-    deleteMetricEntry(id);
-    setSelected(null);
-    toast.success("Entry deleted", { description: `"${title}" has been removed.` });
-  };
-
-  const [rejectReason, setRejectReason] = useState("");
-
-  const handleApprove = (id: string, title: string, currentStatus: string) => {
-    let nextStatus = "APPROVED_FINAL";
-    if (currentUser?.role === "DEPARTMENT_HEAD" && currentStatus === "PENDING_HOD") {
-      nextStatus = "PENDING_OFFICE";
-    } else if (currentUser?.role === "REVIEWER" && currentStatus === "PENDING_OFFICE") {
-      nextStatus = "PENDING_ADMIN";
-    } else if (currentUser?.role === "ADMIN" && currentStatus === "PENDING_ADMIN") {
-      nextStatus = "APPROVED_FINAL";
-    } else if (currentUser?.role === "ADMIN") {
-      nextStatus = "APPROVED_FINAL"; // Admin can force approve
+  const fetchEntries = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [result, deptRes] = await Promise.all([
+        api.getEntries(),
+        api.getDepartments()
+      ]);
+      if (result.success && result.data) {
+        setEntries(result.data);
+      }
+      if (deptRes.success && deptRes.data) {
+        setDepartments(deptRes.data);
+      }
+    } catch {
+      toast.error("Failed to load entries.");
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    updateMetricEntry(id, { status: nextStatus as any, updatedAt: new Date().toISOString() });
-    addApprovalLog({
-      id: `log-${Date.now()}`,
-      reportDraftId: id, // storing entry id here for this workflow
-      reviewerUserId: currentUser?.id ?? "",
-      action: currentUser?.role === "ADMIN" ? "APPROVED_FINAL" as any : "APPROVED" as any,
-      message: `Advanced to ${nextStatus.replace("_", " ")}`,
-      createdAt: new Date().toISOString()
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deptName, setDeptName] = useState("Department");
+  const pageSize = 10;
+
+  useEffect(() => {
+    async function getDept() {
+      if (currentUser?.departmentId) {
+        const res = await api.getDepartment(currentUser.departmentId);
+        if (res.success && res.data) setDeptName(res.data.name);
+      }
+    }
+    getDept();
+  }, [currentUser?.departmentId]);
+
+  const filtered = useMemo(() => {
+    return entries.filter(e => {
+      const matchSearch = !search || e.title.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "ALL" || e.status === statusFilter;
+      const matchCat = categoryFilter === "ALL" || e.category === categoryFilter;
+      const matchDept = deptFilter === "ALL" || e.departmentId === deptFilter;
+      return matchSearch && matchStatus && matchCat && matchDept;
     });
-    setSelected(null);
-    toast.success("Entry advanced", { description: `"${title}" has been moved to ${nextStatus.replace("_", " ")}.` });
+  }, [entries, search, statusFilter, categoryFilter, deptFilter]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginatedEntries = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, categoryFilter, deptFilter]);
+
+  const selectedEntry = entries.find(e => e.id === selected);
+
+  const canApprove = currentUser?.role === "DEPARTMENT_HEAD" || currentUser?.role === "REVIEWER" || currentUser?.role === "ADMIN";
+
+  const handleApprove = async (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+    setActing(entryId);
+
+    let newStatus = entry.status;
+    if (currentUser?.role === "DEPARTMENT_HEAD" && entry.status === "PENDING_HOD") newStatus = "PENDING_OFFICE";
+    else if (currentUser?.role === "REVIEWER" && entry.status === "PENDING_OFFICE") newStatus = "PENDING_ADMIN";
+    else if (currentUser?.role === "ADMIN" && entry.status === "PENDING_ADMIN") newStatus = "APPROVED_FINAL";
+
+    try {
+      const result = await api.updateEntry(entryId, { status: newStatus });
+      if (result.success) {
+        toast.success(`Entry approved → ${newStatus.replace(/_/g, " ")}`);
+        fetchEntries();
+      } else {
+        toast.error(result.message || "Approval failed.");
+      }
+    } catch {
+      toast.error("Approval failed.");
+    } finally {
+      setActing(null);
+      setSelected(null);
+    }
   };
 
-  const handleReject = (id: string, title: string) => {
-    updateMetricEntry(id, { status: "REJECTED_NEEDS_REVIEW", reviewerComment: rejectReason || "Please provide supporting documents.", updatedAt: new Date().toISOString() });
-    addApprovalLog({
-      id: `log-${Date.now()}`,
-      reportDraftId: id,
-      reviewerUserId: currentUser?.id ?? "",
-      action: "REJECTED" as any,
-      message: rejectReason || "Returned for revision",
-      createdAt: new Date().toISOString()
-    });
-    setSelected(null);
-    setRejectReason("");
-    toast.error("Entry returned", { description: `"${title}" has been sent back for revision.` });
-  };
+  const handleReject = async (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+    setActing(entryId);
 
-  const cats = Array.from(new Set(metricEntries.map((e) => e.category)));
+    try {
+      const result = await api.updateEntry(entryId, {
+        status: "REJECTED_NEEDS_REVIEW",
+        reviewerComment: rejectNote || "Entry needs revision.",
+      });
+      if (result.success) {
+        toast.success("Entry rejected.");
+        fetchEntries();
+      } else {
+        toast.error(result.message || "Rejection failed.");
+      }
+    } catch {
+      toast.error("Rejection failed.");
+    } finally {
+      setRejectNote("");
+      setActing(null);
+      setSelected(null);
+    }
+  };
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
-      <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Metric Entries</h2>
-          <p className="text-sm text-muted-foreground">{entries.length} entries · Academic Year 2025-26</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Department Metric Entries</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Institutional ledger of {entries.length} achievements · {deptName}
+          </p>
         </div>
-      </motion.div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-9 px-4 rounded-lg shadow-sm" onClick={fetchEntries}>
+            <Clock className="w-3.5 h-3.5 mr-2" /> Live Reload
+          </Button>
+        </div>
+      </div>
+
 
       {/* Filters */}
-      <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="relative">
+      <motion.div variants={item} className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search entries..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Search entries..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger>
-            <SelectValue placeholder="Year" />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-44">
+            <Filter className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Years</SelectItem>
-            {MOCK_REPORTING_YEARS.map((y) => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            {Object.keys(STATUS_STYLES).map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterCat} onValueChange={setFilterCat}>
-          <SelectTrigger>
-            <Filter className="w-3 h-3 mr-2 text-muted-foreground hidden lg:inline-block" />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All Categories</SelectItem>
-            {cats.map((c) => <SelectItem key={c} value={c}>{c.replace("_", " ")}</SelectItem>)}
+            {Object.entries(CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger>
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
-            <SelectItem value="PENDING_HOD">Pending</SelectItem>
-            <SelectItem value="APPROVED_FINAL">Approved</SelectItem>
-            <SelectItem value="REJECTED_NEEDS_REVIEW">Rejected</SelectItem>
-            <SelectItem value="PENDING_OFFICE">Submitted</SelectItem>
-          </SelectContent>
-        </Select>
+        {(currentUser?.role === "ADMIN" || currentUser?.role === "REVIEWER") && (
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <Building2 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Departments</SelectItem>
+              {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.code}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </motion.div>
 
-      {/* Entries list */}
+      {/* Entries Table */}
       <motion.div variants={item} className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-border bg-muted/30">
           <span className="col-span-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Title</span>
           <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</span>
-          <span className="col-span-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Value</span>
           <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
-          <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</span>
-          <span className="col-span-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Actions</span>
+          <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Value</span>
+          <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Actions</span>
         </div>
 
-        <AnimatePresence>
-          {entries.length === 0 ? (
-            <div className="py-16 text-center text-muted-foreground">
-              <p className="text-sm">No entries found.</p>
-            </div>
-          ) : entries.map((entry, idx) => {
-            const StatusIcon = STATUS_ICONS[entry.status] ?? Clock;
+        {paginatedEntries.length === 0 ? (
+          <div className="py-12 text-center">
+            <FolderOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No entries found matching your filters.</p>
+          </div>
+        ) : (
+          paginatedEntries.map((entry, idx) => {
+            const canAct = canApprove && (
+              (currentUser?.role === "DEPARTMENT_HEAD" && entry.status === "PENDING_HOD") ||
+              (currentUser?.role === "REVIEWER" && entry.status === "PENDING_OFFICE") ||
+              (currentUser?.role === "ADMIN" && entry.status === "PENDING_ADMIN")
+            );
+
             return (
-              <motion.div
+              <div
                 key={entry.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ delay: idx * 0.03 }}
                 className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-5 py-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
               >
                 <div className="md:col-span-4">
-                  <p className="text-sm font-medium text-foreground">{entry.title}</p>
+                  <p className="text-sm font-semibold text-foreground">{entry.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium opacity-70">By {entry.createdByName}</p>
                   {entry.description && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{entry.description}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 truncate max-w-xs">{entry.description}</p>
                   )}
                 </div>
                 <div className="md:col-span-2 flex items-center">
-                  <span className="text-xs text-muted-foreground">{entry.category.replace("_", " ")}</span>
-                </div>
-                <div className="md:col-span-1 flex items-center">
-                  <span className="text-xs font-medium text-foreground">{entry.numericValue ?? "—"}</span>
+                  <span className="text-xs font-semibold uppercase tracking-tight text-muted-foreground">{CATEGORY_LABELS[entry.category] || entry.category}</span>
                 </div>
                 <div className="md:col-span-2 flex items-center">
-                  <Badge className={`text-[11px] border flex items-center gap-1 ${STATUS_STYLES[entry.status] ?? STATUS_STYLES.PENDING_HOD}`}>
-                    <StatusIcon className="w-2.5 h-2.5" />
-                    {entry.status}
+                  <Badge className={`text-[10px] uppercase font-bold border shadow-none ${STATUS_STYLES[entry.status] ?? STATUS_STYLES.DRAFT}`}>
+                    {entry.status.replace(/_/g, " ")}
                   </Badge>
                 </div>
                 <div className="md:col-span-2 flex items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
-                  </span>
-                </div>
-                <div className="md:col-span-1 flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(entry.id)}>
-                    <Eye className="w-3.5 h-3.5" />
-                  </Button>
-                  {isAdmin && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(entry.id, entry.title)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                  {entry.numericValue !== undefined ? (
+                    <span className="text-sm font-bold text-foreground">
+                      {entry.category === "FINANCIAL" ? `₹${(entry.numericValue || 0).toLocaleString()}` : entry.numericValue ?? "—"}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </div>
-              </motion.div>
+                <div className="md:col-span-2 flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold" onClick={() => setSelected(entry.id)}>
+                    <Eye className="w-3.5 h-3.5 mr-1" /> Inspect
+                  </Button>
+                  {canAct && (
+                    <div className="flex gap-1 ml-1 pl-1 border-l border-border">
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
+                        onClick={() => handleApprove(entry.id)}
+                        disabled={!!acting}
+                      >
+                        {acting === entry.id ? <Clock className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      </Button>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                        onClick={() => setSelected(entry.id)}
+                        disabled={!!acting}
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             );
-          })}
-        </AnimatePresence>
+          })
+        )}
       </motion.div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 pt-2 pb-8">
+          <p className="text-xs font-medium text-muted-foreground">
+            Showing <span className="text-foreground">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-foreground">{Math.min(currentPage * pageSize, filtered.length)}</span> of <span className="text-foreground">{filtered.length} entries</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" size="sm" className="h-8 font-bold uppercase text-[10px] tracking-wider"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <Button 
+                  key={i} 
+                  variant={currentPage === i + 1 ? "default" : "outline"} 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-xs font-bold"
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+            </div>
+            <Button 
+              variant="outline" size="sm" className="h-8 font-bold uppercase text-[10px] tracking-wider"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-base">{selectedEntry?.title}</DialogTitle>
+            <DialogTitle>{selectedEntry?.title || "Entry Details"}</DialogTitle>
           </DialogHeader>
           {selectedEntry && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge className={`text-[11px] border ${STATUS_STYLES[selectedEntry.status]}`}>{selectedEntry.status}</Badge>
-                <span className="text-xs text-muted-foreground">{selectedEntry.category.replace("_", " ")}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className={`text-[11px] border ${STATUS_STYLES[selectedEntry.status]}`}>
+                  {selectedEntry.status.replace(/_/g, " ")}
+                </Badge>
+                <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[selectedEntry.category]}</span>
+                <span className="text-xs text-muted-foreground">· Dept: {selectedEntry.departmentId}</span>
               </div>
+
               {selectedEntry.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed">{selectedEntry.description}</p>
               )}
+
               <div className="grid grid-cols-2 gap-3">
                 {selectedEntry.numericValue !== undefined && (
-                  <div className="bg-muted rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Numeric Value</p>
-                    <p className="text-lg font-bold text-foreground">{selectedEntry.numericValue}</p>
-                  </div>
-                )}
-                {selectedEntry.textualValue && (
-                  <div className="bg-muted rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Textual Value</p>
-                    <p className="text-sm font-semibold text-foreground">{selectedEntry.textualValue}</p>
-                  </div>
-                )}
-                {selectedEntry.studentTargets && (
-                  <div className="bg-green-50 rounded-lg p-3 col-span-2">
-                    <p className="text-xs font-semibold text-green-800">Mentee Targets</p>
-                    <p className="text-sm text-green-900 mt-1">Papers: {selectedEntry.studentTargets.papersPublished} | Competitions: {selectedEntry.studentTargets.competitionsDone}</p>
-                  </div>
-                )}
-                {selectedEntry.staffTargets && (
-                  <div className="bg-orange-50 rounded-lg p-3 col-span-2">
-                    <p className="text-xs font-semibold text-orange-800">Staff Extra Targets</p>
-                    <p className="text-sm text-orange-900 mt-1">Tasks: {selectedEntry.staffTargets.tasksDone} | Extra Pay: ${selectedEntry.staffTargets.extraPay}</p>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Value</p>
+                    <p className="text-lg font-bold text-primary">{selectedEntry.numericValue}</p>
+                    {selectedEntry.textualValue && <p className="text-xs text-muted-foreground">{selectedEntry.textualValue}</p>}
                   </div>
                 )}
                 {selectedEntry.financialSpends && (
-                  <div className="bg-red-50 rounded-lg p-3 col-span-2">
-                    <p className="text-xs font-semibold text-red-800">Financial Spends</p>
-                    <p className="text-sm text-red-900 mt-1">Amount: ${selectedEntry.financialSpends}</p>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Financial Spend</p>
+                    <p className="text-lg font-bold text-foreground">${selectedEntry.financialSpends}</p>
                   </div>
                 )}
               </div>
-              {selectedEntry.reviewerComment && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-red-700 mb-1">Previous Review Note</p>
-                  <p className="text-xs text-red-600">{selectedEntry.reviewerComment}</p>
+
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>Submitted by: {selectedEntry?.createdByName}</p>
+                <p>Created: {new Date(selectedEntry.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                {selectedEntry.reviewerComment && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs font-semibold text-yellow-700">Reviewer Feedback</p>
+                    <p className="text-xs text-yellow-600 mt-1">{selectedEntry.reviewerComment}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Approve/Reject actions in dialog */}
+              {canApprove && (
+                (currentUser?.role === "DEPARTMENT_HEAD" && selectedEntry.status === "PENDING_HOD") ||
+                (currentUser?.role === "REVIEWER" && selectedEntry.status === "PENDING_OFFICE") ||
+                (currentUser?.role === "ADMIN" && selectedEntry.status === "PENDING_ADMIN")
+              ) && (
+                <div className="space-y-3 pt-3 border-t border-border">
+                  <Textarea
+                    placeholder="Add a note (optional, required for rejection)..."
+                    value={rejectNote}
+                    onChange={e => setRejectNote(e.target.value)}
+                    rows={2}
+                    className="resize-none text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm" className="flex-1 bg-green-600 hover:bg-green-700"
+                      disabled={!!acting}
+                      onClick={() => handleApprove(selectedEntry.id)}
+                    >
+                      {acting ? "Processing..." : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Approve</>}
+                    </Button>
+                    <Button
+                      size="sm" variant="outline"
+                      className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                      disabled={!!acting}
+                      onClick={() => handleReject(selectedEntry.id)}
+                    >
+                      {acting ? "Processing..." : <><XCircle className="w-3.5 h-3.5 mr-1.5" />Reject</>}
+                    </Button>
+                  </div>
                 </div>
               )}
-              <div className="pt-4 border-t w-full overflow-hidden">
-                <Timeline events={[
-                  { id: "s1", title: "Submitted by Staff", date: new Date(selectedEntry.createdAt).toLocaleDateString(), status: "completed", color: "success" },
-                  { id: "s2", title: "HOD Verification", date: ["PENDING_OFFICE", "PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? new Date(selectedEntry.updatedAt).toLocaleDateString() : "", status: ["PENDING_OFFICE", "PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? "completed" : selectedEntry.status === "PENDING_HOD" ? "current" : "pending" as any, color: ["PENDING_OFFICE", "PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? "success" : "primary" },
-                  { id: "s3", title: "Office Staff Verification", date: ["PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? new Date(selectedEntry.updatedAt).toLocaleDateString() : "", status: ["PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? "completed" : selectedEntry.status === "PENDING_OFFICE" ? "current" : "pending" as any, color: ["PENDING_ADMIN", "APPROVED_FINAL"].includes(selectedEntry.status) ? "success" : "primary" },
-                  { id: "s4", title: "Final Admin Approval", date: selectedEntry.status === "APPROVED_FINAL" ? new Date(selectedEntry.updatedAt).toLocaleDateString() : "", status: selectedEntry.status === "APPROVED_FINAL" ? "completed" : selectedEntry.status === "PENDING_ADMIN" ? "current" : "pending" as any, color: selectedEntry.status === "APPROVED_FINAL" ? "success" : "primary" },
-                  ...(selectedEntry.status === "REJECTED_NEEDS_REVIEW" ? [{ id: "s5", title: "Returned for Revision", date: new Date(selectedEntry.updatedAt).toLocaleDateString(), status: "current" as any, color: "error" as any }] : [])
-                ]} />
-              </div>
-              {((isDeptHead && selectedEntry.status === "PENDING_HOD") ||
-                (currentUser?.role === "REVIEWER" && selectedEntry.status === "PENDING_OFFICE") ||
-                (isAdmin && ["PENDING_ADMIN", "PENDING_OFFICE", "PENDING_HOD"].includes(selectedEntry.status))) && (
-                  <div className="pt-2 border-t mt-4 space-y-3">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium">Review Action (Optional Comment before Reject)</p>
-                      <Input placeholder="Reason for revision..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="h-8 text-xs" />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleApprove(selectedEntry.id, selectedEntry.title, selectedEntry.status)}>
-                        {currentUser?.role === "ADMIN" ? "Final Approve" : "Approve & Advance"}
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1 border-red-300 text-red-600 hover:bg-red-50" onClick={() => handleReject(selectedEntry.id, selectedEntry.title)}>
-                        Return for Revision
-                      </Button>
-                    </div>
-                  </div>
-                )}
             </div>
           )}
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

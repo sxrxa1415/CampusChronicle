@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Eye, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
 
 interface ReportPreviewProps {
   isOpen: boolean;
@@ -24,15 +24,15 @@ interface ReportPreviewProps {
 }
 
 export function ReportPreview({ isOpen, onClose, report }: ReportPreviewProps) {
-  const { showToast } = useAppStore();
+
   const [activeSection, setActiveSection] = useState(0);
 
   const handleDownload = () => {
-    showToast('Report downloading...', 'success');
+    toast.success('Report downloading...');
   };
 
   const handleShare = () => {
-    showToast('Share link copied to clipboard!', 'success');
+    toast.success('Share link copied to clipboard!');
   };
 
   if (!isOpen) return null;

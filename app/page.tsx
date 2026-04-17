@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { useHydrateStore } from "@/lib/use-hydrate-store";
-import { MOCK_USERS, DEMO_CREDENTIALS } from "@/lib/mock-data";
+import { DEMO_CREDENTIALS } from "@/lib/mock-data";
+import type { InstituteUser } from "@/lib/types";
 import {
   Eye, EyeOff, GraduationCap, Lock, Mail, ChevronRight,
   BookOpen, BarChart3, Users, FileText,
@@ -50,32 +51,82 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const cred = DEMO_CREDENTIALS.find(
-      (c) => c.email === email.trim() && c.password === password
-    );
-    if (!cred) {
-      toast.error("Invalid credentials", { description: "Check your email and password." });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Invalid credentials", { description: "Check your email and password." });
+        setLoading(false);
+        return;
+      }
+      const u = data.data.user;
+      const storeUser: InstituteUser = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        departmentId: u.departmentId ?? undefined,
+        avatar: u.avatar ?? u.name.split(" ").map((n: string) => n[0]).join(""),
+        theme: u.theme as "light" | "dark",
+        emailNotificationsEnabled: u.emailNotificationsEnabled,
+        attachedDepartmentIds: u.attachedDepartmentIds,
+        menteeIds: u.menteeIds,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      login(storeUser);
+      toast.success(`Welcome back, ${u.name.split(" ")[0]}!`, {
+        description: `Logged in as ${roleLabels[u.role]}`,
+      });
+      router.push("/dashboard");
+    } catch {
+      toast.error("Login failed", { description: "Server error. Please try again." });
       setLoading(false);
-      return;
     }
-    const user = MOCK_USERS.find((u) => u.email === cred.email)!;
-    login(user);
-    toast.success(`Welcome back, ${user.name.split(" ")[0]}!`, {
-      description: `Logged in as ${roleLabels[user.role]}`,
-    });
-    router.push("/dashboard");
   };
 
   const quickLogin = async (cred: (typeof DEMO_CREDENTIALS)[number]) => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    const user = MOCK_USERS.find((u) => u.email === cred.email)!;
-    login(user);
-    toast.success(`Welcome, ${user.name.split(" ")[0]}!`, {
-      description: `Signed in as ${roleLabels[user.role]}`,
-    });
-    router.push("/dashboard");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cred.email, password: cred.password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Quick login failed");
+        setLoading(false);
+        return;
+      }
+      const u = data.data.user;
+      const storeUser: InstituteUser = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        departmentId: u.departmentId ?? undefined,
+        avatar: u.avatar ?? u.name.split(" ").map((n: string) => n[0]).join(""),
+        theme: u.theme as "light" | "dark",
+        emailNotificationsEnabled: u.emailNotificationsEnabled,
+        attachedDepartmentIds: u.attachedDepartmentIds,
+        menteeIds: u.menteeIds,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      login(storeUser);
+      toast.success(`Welcome, ${u.name.split(" ")[0]}!`, {
+        description: `Signed in as ${roleLabels[u.role]}`,
+      });
+      router.push("/dashboard");
+    } catch {
+      toast.error("Quick login failed");
+      setLoading(false);
+    }
   };
 
   return (

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
 
 interface EntryFormProps {
   onSubmit?: (data: Record<string, any>) => void;
@@ -13,7 +13,7 @@ interface EntryFormProps {
 }
 
 export function EntryForm({ onSubmit, onCancel, isLoading = false }: EntryFormProps) {
-  const { showToast } = useAppStore();
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,12 +25,12 @@ export function EntryForm({ onSubmit, onCancel, isLoading = false }: EntryFormPr
     e.preventDefault();
 
     if (!formData.name || !formData.category) {
-      showToast('Please fill all required fields', 'error');
+      toast.error('Please fill all required fields');
       return;
     }
 
     onSubmit?.(formData);
-    showToast('Entry submitted successfully!', 'success');
+    toast.success('Entry submitted successfully!');
   };
 
   return (

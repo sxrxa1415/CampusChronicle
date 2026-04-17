@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Upload, File, X, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
 
 interface UploadedFile {
   id: string;
@@ -26,7 +26,7 @@ export function FileUploader({
   maxFiles = 5,
   acceptedFormats = ['.pdf', '.docx', '.xlsx'],
 }: FileUploaderProps) {
-  const { showToast } = useAppStore();
+
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -45,7 +45,7 @@ export function FileUploader({
 
   const processFiles = (selectedFiles: File[]) => {
     if (files.length + selectedFiles.length > maxFiles) {
-      showToast(`Maximum ${maxFiles} files allowed`, 'error');
+      toast.error(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
@@ -71,7 +71,7 @@ export function FileUploader({
       }, 1500);
     });
 
-    showToast(`${selectedFiles.length} file(s) uploaded successfully!`, 'success');
+    toast.success(`${selectedFiles.length} file(s) uploaded successfully!`);
   };
 
   const removeFile = (fileId: string) => {

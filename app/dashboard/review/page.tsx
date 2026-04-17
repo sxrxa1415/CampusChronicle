@@ -1,15 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { MOCK_DEPARTMENTS, MOCK_USERS, MOCK_REPORTING_YEARS } from "@/lib/mock-data";
+import { api } from "@/lib/api-client";
+import type { ApiDraft } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Eye, CheckCircle, XCircle, MessageSquare, RotateCcw, FileText, Clock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
 const STATUS_STYLES: Record<string, string> = {
   APPROVED_FINAL: "bg-green-100 text-green-700 border-green-200",
@@ -19,79 +20,109 @@ const STATUS_STYLES: Record<string, string> = {
   REJECTED_NEEDS_REVIEW: "bg-red-100 text-red-700 border-red-200",
 };
 
+interface DraftDetail {
+  id: string;
+  departmentId: string;
+  department: { name: string; code: string };
+  reportingYearId: string;
+  compiledMetricEntryIds: string[];
+  status: string;
+  submittedAt: string | null;
+  createdByUserId: string;
+  createdBy: { name: string; avatar: string | null; avatarUrl: string | null };
+  comments: Array<{ id: string; message: string; createdAt: string; commentedBy: { name: string; avatar: string | null; role: string } }>;
+  approvalLogs: Array<{ id: string; action: string; message: string | null; createdAt: string; reviewer: { name: string; role: string } }>;
+}
+
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 
 export default function ReviewPage() {
-  const { currentUser, reportDrafts, updateReportDraft, metricEntries, comments, addComment, addApprovalLog, addNotification } = useAppStore();
+  const { currentUser } = useAppStore();
+  const [allDrafts, setAllDrafts] = useState<ApiDraft[]>([]);
+  const [metricEntries, setMetricEntries] = useState<any[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [draftDetail, setDraftDetail] = useState<DraftDetail | null>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [acting, setActing] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
-  const reviewableDrafts = reportDrafts.filter((d) =>
-    ["PENDING_OFFICE", "PENDING_ADMIN"].includes(d.status)
-  );
-  const allDrafts = reportDrafts;
+  const fetchDrafts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [draftsRes, entriesRes] = await Promise.all([
+        api.getDrafts(),
+        api.getEntries()
+      ]);
+      if (draftsRes.success && draftsRes.data) setAllDrafts(draftsRes.data);
+      if (entriesRes.success && entriesRes.data) setMetricEntries(entriesRes.data);
+    } catch {
+      toast.error("Failed to load reports.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const draft = allDrafts.find((d) => d.id === selected);
-  const dept = draft ? MOCK_DEPARTMENTS.find((d) => d.id === draft.departmentId) : null;
-  const submitter = draft ? MOCK_USERS.find((u) => u.id === draft.createdByUserId) : null;
-  const draftEntries = draft ? metricEntries.filter((e) => draft.compiledMetricEntryIds.includes(e.id)) : [];
-  const draftComments = draft ? comments.filter((c) => c.reportDraftId === draft.id) : [];
+  useEffect(() => { fetchDrafts(); }, [fetchDrafts]);
 
-  const doAction = async (action: "APPROVED_FINAL" | "REJECTED_NEEDS_REVIEW" | "REVISION_REQUESTED") => {
+  const fetchDetail = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/drafts/${id}`, { credentials: "include" });
+      const data = await res.json();
+      if (data.success) setDraftDetail(data.data);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    if (selected) fetchDetail(selected);
+    else setDraftDetail(null);
+  }, [selected, fetchDetail]);
+
+  const reviewableDrafts = allDrafts.filter((d) => ["PENDING_OFFICE", "PENDING_ADMIN"].includes(d.status));
+  
+  const totalPages = Math.ceil(allDrafts.length / pageSize);
+  const paginatedDrafts = allDrafts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const draft = draftDetail;
+  const draftEntries = draft ? metricEntries.filter((e) => (draft.compiledMetricEntryIds || []).includes(e.id)) : [];
+
+  const doAction = async (action: "APPROVED" | "REJECTED" | "REVISION_REQUESTED") => {
     if (!draft) return;
     setActing(action);
-    await new Promise((r) => setTimeout(r, 700));
 
-    const newStatus = action === "APPROVED_FINAL" ? "APPROVED_FINAL" : action === "REJECTED_NEEDS_REVIEW" ? "REJECTED_NEEDS_REVIEW" : "PENDING_ADMIN";
-    updateReportDraft(draft.id, { status: newStatus as any, updatedAt: new Date().toISOString() });
-
-    addApprovalLog({
-      id: `al_${Date.now()}`,
-      reportDraftId: draft.id,
-      reviewerUserId: currentUser?.id ?? "",
-      action,
-      message: reviewNote || `${action.replace("_", " ")} by reviewer.`,
-      createdAt: new Date().toISOString(),
-    });
-
-    if (reviewNote.trim()) {
-      addComment({
-        id: `rc_${Date.now()}`,
+    try {
+      // Create approval log
+      await api.createApproval({
         reportDraftId: draft.id,
-        commentedByUserId: currentUser?.id ?? "",
-        message: reviewNote,
-        createdAt: new Date().toISOString(),
+        action,
+        message: reviewNote || `${action.replace("_", " ")} by reviewer.`,
       });
+
+      // Add comment if note provided
+      if (reviewNote.trim()) {
+        await api.createComment({
+          reportDraftId: draft.id,
+          message: reviewNote,
+        });
+      }
+
+      // Update draft status
+      const newStatus = action === "APPROVED" ? "APPROVED_FINAL" : action === "REJECTED" ? "REJECTED_NEEDS_REVIEW" : "PENDING_ADMIN";
+      await api.updateDraft(draft.id, { status: newStatus });
+
+      toast.success(`Report ${action.toLowerCase().replace("_", " ")}.`);
+      setReviewNote("");
+      setSelected(null);
+      fetchDrafts();
+    } catch {
+      toast.error("Action failed.");
+    } finally {
+      setActing(null);
     }
-
-    addNotification({
-      id: `n_${Date.now()}`,
-      userId: draft.createdByUserId,
-      reportDraftId: draft.id,
-      title: `Report ${action === "APPROVED_FINAL" ? "Approved" : action === "REJECTED_NEEDS_REVIEW" ? "Rejected" : "Revision Requested"}`,
-      message: reviewNote || `Your ${dept?.name} report was ${action.toLowerCase().replace("_", " ")} by the reviewer.`,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    });
-
-    setReviewNote("");
-    setActing(null);
-    setSelected(null);
-
-    const messages: Record<string, string> = {
-      APPROVED_FINAL: `${dept?.name} report approved successfully.`,
-      REJECTED_NEEDS_REVIEW: `${dept?.name} report rejected.`,
-      REVISION_REQUESTED: `Revision requested for ${dept?.name} report.`,
-    };
-    const toastFns: Record<string, (m: string, o: object) => void> = {
-      APPROVED_FINAL: toast.success,
-      REJECTED_NEEDS_REVIEW: toast.error,
-      REVISION_REQUESTED: toast.warning,
-    };
-    (toastFns[action] ?? toast)(messages[action], { description: reviewNote || undefined });
   };
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
@@ -109,8 +140,9 @@ export default function ReviewPage() {
             <div className="px-4 py-3 border-b border-border bg-muted/30">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">All Reports</p>
             </div>
-            {allDrafts.map((d) => {
-              const dp = MOCK_DEPARTMENTS.find((dep) => dep.id === d.departmentId);
+            {allDrafts.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-sm">No reports found.</div>
+            ) : paginatedDrafts.map((d) => {
               const isActive = selected === d.id;
               return (
                 <motion.button
@@ -123,11 +155,11 @@ export default function ReviewPage() {
                   )}
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{dp?.code}</p>
-                    <p className="text-xs text-muted-foreground truncate">{dp?.name}</p>
+                    <p className="text-sm font-medium text-foreground">{d.department?.code}</p>
+                    <p className="text-xs text-muted-foreground truncate">{d.department?.name}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge className={`text-[10px] border ${STATUS_STYLES[d.status]}`}>
+                    <Badge className={`text-[10px] border ${STATUS_STYLES[d.status] || STATUS_STYLES.DRAFT}`}>
                       {d.status.replace("_", " ")}
                     </Badge>
                     <ChevronRight className="w-3 h-3 text-muted-foreground" />
@@ -135,6 +167,21 @@ export default function ReviewPage() {
                 </motion.button>
               );
             })}
+
+            {/* Pagination Mini */}
+            {totalPages > 1 && (
+              <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-muted-foreground">{currentPage} / {totalPages}</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                    <ChevronRight className="w-3 h-3 rotate-180" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -152,15 +199,15 @@ export default function ReviewPage() {
                 {/* Header */}
                 <div className="px-5 py-4 border-b border-border flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-foreground">{dept?.name}</h3>
+                    <h3 className="font-semibold text-foreground">{draft.department?.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-muted-foreground">Submitted by {submitter?.name}</p>
+                      <p className="text-xs text-muted-foreground">Submitted by {draft.createdBy?.name}</p>
                       {draft.submittedAt && (
                         <span className="text-xs text-muted-foreground">· {new Date(draft.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
                       )}
                     </div>
                   </div>
-                  <Badge className={`text-[11px] border ${STATUS_STYLES[draft.status]}`}>
+                  <Badge className={`text-[11px] border ${STATUS_STYLES[draft.status] || STATUS_STYLES.DRAFT}`}>
                     {draft.status.replace("_", " ")}
                   </Badge>
                 </div>
@@ -184,18 +231,15 @@ export default function ReviewPage() {
                 </div>
 
                 {/* Comments from reviewer */}
-                {draftComments.length > 0 && (
+                {draft.comments && draft.comments.length > 0 && (
                   <div className="px-5 pb-4 border-t border-border pt-4">
                     <p className="text-xs font-semibold text-muted-foreground mb-2">Previous Comments</p>
-                    {draftComments.map((c) => {
-                      const u = MOCK_USERS.find((u) => u.id === c.commentedByUserId);
-                      return (
-                        <div key={c.id} className="flex items-start gap-2 mb-2">
-                          <div className="w-6 h-6 rounded-full bg-muted text-[10px] font-bold flex items-center justify-center shrink-0">{u?.avatar}</div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{c.message}</p>
-                        </div>
-                      );
-                    })}
+                    {draft.comments.map((c) => (
+                      <div key={c.id} className="flex items-start gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-muted text-[10px] font-bold flex items-center justify-center shrink-0">{c.commentedBy?.avatar || "?"}</div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{c.message}</p>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -212,16 +256,16 @@ export default function ReviewPage() {
                     />
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" className="bg-green-600 hover:bg-green-700 flex-1"
-                        disabled={!!acting} onClick={() => doAction("APPROVED_FINAL")}>
-                        {acting === "APPROVED_FINAL" ? "Approving..." : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Approve</>}
+                        disabled={!!acting} onClick={() => doAction("APPROVED")}>
+                        {acting === "APPROVED" ? "Approving..." : <><CheckCircle className="w-3.5 h-3.5 mr-1.5" />Approve</>}
                       </Button>
                       <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex-1"
                         disabled={!!acting} onClick={() => doAction("REVISION_REQUESTED")}>
                         {acting === "REVISION_REQUESTED" ? "Requesting..." : <><RotateCcw className="w-3.5 h-3.5 mr-1.5" />Request Revision</>}
                       </Button>
                       <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 flex-1"
-                        disabled={!!acting} onClick={() => doAction("REJECTED_NEEDS_REVIEW")}>
-                        {acting === "REJECTED_NEEDS_REVIEW" ? "Rejecting..." : <><XCircle className="w-3.5 h-3.5 mr-1.5" />Reject</>}
+                        disabled={!!acting} onClick={() => doAction("REJECTED")}>
+                        {acting === "REJECTED" ? "Rejecting..." : <><XCircle className="w-3.5 h-3.5 mr-1.5" />Reject</>}
                       </Button>
                     </div>
                   </div>

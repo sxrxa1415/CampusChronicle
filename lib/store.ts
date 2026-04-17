@@ -13,17 +13,6 @@ import type {
   ReportSectionType,
   ReportNotification,
 } from "./types";
-import {
-  MOCK_USERS,
-  MOCK_METRIC_ENTRIES,
-  MOCK_REPORT_DRAFTS,
-  MOCK_COMMENTS,
-  MOCK_APPROVAL_LOGS,
-  MOCK_VERSIONS,
-  MOCK_REPORT_TEMPLATES,
-  MOCK_TEMPLATE_SECTIONS,
-  MOCK_NOTIFICATIONS,
-} from "./mock-data";
 
 export interface Toast {
   id: string;
@@ -61,6 +50,7 @@ interface AppStore {
   // Approval Logs
   approvalLogs: ReportApprovalLog[];
   addApprovalLog: (log: ReportApprovalLog) => void;
+  setApprovalLogs: (logs: ReportApprovalLog[]) => void;
 
   // Toast Notifications
   toasts: Toast[];
@@ -76,6 +66,8 @@ interface AppStore {
   addReportTemplate: (template: InstituteReportTemplate) => void;
   updateReportTemplate: (id: string, updates: Partial<InstituteReportTemplate>) => void;
   deleteReportTemplate: (id: string) => void;
+  setReportTemplates: (templates: InstituteReportTemplate[]) => void;
+  setMetricEntries: (entries: DepartmentMetricEntry[]) => void;
 
   // Template Sections & Report Builder
   templateSections: ReportTemplateSection[];
@@ -88,6 +80,7 @@ interface AppStore {
   // Notifications
   notifications: ReportNotification[];
   addNotification: (notification: ReportNotification) => void;
+  setNotifications: (notifications: ReportNotification[]) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
 
@@ -102,7 +95,7 @@ interface AppStore {
 export const useAppStore = create<AppStore>()(
   persist(
     (set) => ({
-      users: [...MOCK_USERS],
+      users: [],
       currentUser: null,
       login: (user) => set({ currentUser: user }),
       logout: () => set({ currentUser: null }),
@@ -126,7 +119,7 @@ export const useAppStore = create<AppStore>()(
         : null,
     })),
 
-  metricEntries: MOCK_METRIC_ENTRIES,
+  metricEntries: [],
   addMetricEntry: (entry) =>
     set((s) => ({ metricEntries: [entry, ...s.metricEntries] })),
   updateMetricEntry: (id, updates) =>
@@ -140,7 +133,7 @@ export const useAppStore = create<AppStore>()(
       metricEntries: s.metricEntries.filter((e) => e.id !== id),
     })),
 
-  reportDrafts: MOCK_REPORT_DRAFTS,
+  reportDrafts: [],
   addReportDraft: (draft) =>
     set((s) => ({ reportDrafts: [draft, ...s.reportDrafts] })),
   updateReportDraft: (id, updates) =>
@@ -150,19 +143,20 @@ export const useAppStore = create<AppStore>()(
       ),
     })),
 
-  comments: MOCK_COMMENTS,
+  comments: [],
   addComment: (comment) =>
     set((s) => ({ comments: [comment, ...s.comments] })),
 
-  approvalLogs: MOCK_APPROVAL_LOGS,
+  approvalLogs: [],
   addApprovalLog: (log) =>
     set((s) => ({ approvalLogs: [log, ...s.approvalLogs] })),
+  setApprovalLogs: (logs) => set({ approvalLogs: logs }),
 
-  versions: MOCK_VERSIONS,
+  versions: [],
   addVersion: (version) =>
     set((s) => ({ versions: [version, ...s.versions] })),
 
-  reportTemplates: MOCK_REPORT_TEMPLATES,
+  reportTemplates: [],
   addReportTemplate: (t) => set((s) => ({ reportTemplates: [t, ...s.reportTemplates] })),
   updateReportTemplate: (id, updates) => set((s) => ({
     reportTemplates: s.reportTemplates.map((t) => t.id === id ? { ...t, ...updates } : t)
@@ -170,8 +164,10 @@ export const useAppStore = create<AppStore>()(
   deleteReportTemplate: (id) => set((s) => ({
     reportTemplates: s.reportTemplates.filter((t) => t.id !== id)
   })),
+  setReportTemplates: (templates) => set({ reportTemplates: templates }),
+  setMetricEntries: (entries) => set({ metricEntries: entries }),
 
-  templateSections: MOCK_TEMPLATE_SECTIONS,
+  templateSections: [],
   addTemplateSection: (section) =>
     set((s) => ({ templateSections: [section, ...s.templateSections] })),
   updateTemplateSection: (id, updates) =>
@@ -200,9 +196,10 @@ export const useAppStore = create<AppStore>()(
     return { templateSections: newSections };
   }),
 
-  notifications: MOCK_NOTIFICATIONS,
+  notifications: [],
   addNotification: (notification) =>
     set((s) => ({ notifications: [notification, ...s.notifications] })),
+  setNotifications: (notifications) => set({ notifications }),
   markNotificationRead: (id) =>
     set((s) => ({
       notifications: s.notifications.map((n) =>
@@ -236,6 +233,25 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: "campus-chronicle-storage",
+      merge: (persistedState: any, currentState: AppStore): AppStore => {
+        const s = persistedState as Partial<AppStore> | undefined;
+        if (!s) return currentState;
+        const safeArr = <T>(val: unknown): T[] => (Array.isArray(val) ? val : []);
+        return {
+          ...currentState,
+          ...s,
+          users: safeArr(s.users),
+          metricEntries: safeArr(s.metricEntries),
+          reportDrafts: safeArr(s.reportDrafts),
+          comments: safeArr(s.comments),
+          approvalLogs: safeArr(s.approvalLogs),
+          versions: safeArr(s.versions),
+          reportTemplates: safeArr(s.reportTemplates),
+          templateSections: safeArr(s.templateSections),
+          notifications: safeArr(s.notifications),
+          toasts: safeArr(s.toasts),
+        };
+      },
     }
   )
 );

@@ -1,0 +1,329 @@
+// CampusChronicle - Annual Report Portal Database Schema
+// MySQL via Prisma ORM v5.22.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum InstituteRole {
+  ADMIN
+  DEPARTMENT_HEAD
+  FACULTY
+  REVIEWER
+}
+
+enum MetricCategory {
+  ACADEMIC
+  RESEARCH
+  FINANCIAL
+  INFRASTRUCTURE
+  STUDENT_ACHIEVEMENT
+  FACULTY_ACHIEVEMENT
+  EXTRACURRICULAR
+  OTHER
+}
+
+enum EntryStatus {
+  DRAFT
+  PENDING_HOD
+  PENDING_OFFICE
+  PENDING_ADMIN
+  APPROVED_FINAL
+  REJECTED_NEEDS_REVIEW
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED
+}
+
+enum ReportSectionType {
+  COVER
+  ACADEMIC
+  RESEARCH
+  FINANCIAL
+  INFRASTRUCTURE
+  ACHIEVEMENTS
+  EVENTS
+  CUSTOM
+}
+
+enum AnnualReportStatus {
+  GENERATED
+  PUBLISHED
+}
+
+// ─── MODELS ──────────────────────────────────────────────
+
+model User {
+  id                       String        @id @default(uuid())
+  name                     String
+  email                    String        @unique
+  passwordHash             String
+  role                     InstituteRole
+  departmentId             String?
+  department               Department?   @relation("UserDepartment", fields: [departmentId], references: [id])
+  avatar                   String?
+  avatarUrl                String?
+  theme                    String        @default("light")
+  emailNotificationsEnabled Boolean      @default(true)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  // Reviewer: attached departments (many-to-many)
+  attachedDepartments ReviewerDepartment[]
+
+  // Faculty: mentee students (many-to-many)
+  menteeStudents FacultyMentee[]
+
+  // Relations
+  metricEntries    DepartmentMetricEntry[] @relation("EntryCreator")
+  reportDrafts     DepartmentReportDraft[] @relation("DraftCreator")
+  comments         ReportComment[]         @relation("CommentAuthor")
+  approvalLogs     ReportApprovalLog[]     @relation("LogReviewer")
+  versions         ReportVersion[]         @relation("VersionCreator")
+  notifications    ReportNotification[]    @relation("NotifUser")
+  templatesCreated InstituteReportTemplate[] @relation("TemplateCreator")
+  sectionsCreated  ReportTemplateSection[]  @relation("SectionCreator")
+
+  @@map("users")
+}
+
+model ReviewerDepartment {
+  userId       String
+  departmentId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, departmentId])
+  @@map("reviewer_departments")
+}
+
+model FacultyMentee {
+  userId    String
+  studentId String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student   InstituteStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, studentId])
+  @@map("faculty_mentees")
+}
+
+model InstituteStudent {
+  id           String @id @default(uuid())
+  name         String
+  rollNo       String @unique
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  mentors FacultyMentee[]
+  entries DepartmentMetricEntry[] @relation("EntryStudent")
+
+  @@map("students")
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  hodUserId String
+  createdAt DateTime @default(now())
+
+  users         User[]                  @relation("UserDepartment")
+  students      InstituteStudent[]
+  metricEntries DepartmentMetricEntry[]
+  reportDrafts  DepartmentReportDraft[]
+  kpis          DepartmentKPI[]
+  reviewers     ReviewerDepartment[]
+
+  @@map("departments")
+}
+
+model ReportingYear {
+  id        String   @id @default(uuid())
+  label     String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+
+  metricEntries DepartmentMetricEntry[]
+  reportDrafts  DepartmentReportDraft[]
+
+  @@map("reporting_years")
+}
+
+model DepartmentMetricEntry {
+  id               String         @id @default(uuid())
+  departmentId     String
+  department       Department     @relation(fields: [departmentId], references: [id])
+  reportingYearId  String
+  reportingYear    ReportingYear  @relation(fields: [reportingYearId], references: [id])
+  category         MetricCategory
+  title            String
+  description      String?        @db.Text
+  numericValue     Float?
+  textualValue     String?
+  attachments      Json?
+  images           Json?
+  createdByUserId  String
+  createdBy        User           @relation("EntryCreator", fields: [createdByUserId], references: [id])
+  studentId        String?
+  student          InstituteStudent? @relation("EntryStudent", fields: [studentId], references: [id])
+  status           EntryStatus    @default(DRAFT)
+  reviewerComment  String?        @db.Text
+  financialSpends  Float?
+  // KPI fields
+  passPercentage      Float?
+  placementPercentage Float?
+  researchOutputScore Float?
+  attendanceTrends    Float?
+  studentTargets      Json?
+  staffTargets        Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("metric_entries")
+}
+
+model DepartmentKPI {
+  id              String     @id @default(uuid())
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id])
+  reportingYearId String
+  kpiName         String
+  kpiValue        Float
+  unit            String?
+  createdAt       DateTime   @default(now())
+
+  @@map("department_kpis")
+}
+
+model InstituteReportTemplate {
+  id              String          @id @default(uuid())
+  name            String
+  description     String          @db.Text
+  targetCategory  MetricCategory?
+  sections        Json
+  usage           Int             @default(0)
+  guidelineFileUrl String?
+  createdByAdminId String
+  createdByAdmin   User           @relation("TemplateCreator", fields: [createdByAdminId], references: [id])
+  createdAt       DateTime        @default(now())
+
+  @@map("report_templates")
+}
+
+model ReportTemplateSection {
+  id              String            @id @default(uuid())
+  sectionType     ReportSectionType
+  title           String
+  description     String?
+  layoutJson      String            @db.Text
+  createdByAdminId String
+  createdByAdmin   User             @relation("SectionCreator", fields: [createdByAdminId], references: [id])
+  createdAt       DateTime          @default(now())
+
+  @@map("template_sections")
+}
+
+model DepartmentReportDraft {
+  id                       String      @id @default(uuid())
+  departmentId             String
+  department               Department  @relation(fields: [departmentId], references: [id])
+  reportingYearId          String
+  reportingYear            ReportingYear @relation(fields: [reportingYearId], references: [id])
+  compiledMetricEntryIds   Json
+  previewHtml              String?     @db.LongText
+  status                   EntryStatus @default(DRAFT)
+  isLocked                 Boolean     @default(false)
+  submittedAt              DateTime?
+  approvedAt               DateTime?
+  createdByUserId          String
+  createdBy                User        @relation("DraftCreator", fields: [createdByUserId], references: [id])
+  financialSpends          Float?
+  officeStaffFinancialSpends Float?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  comments     ReportComment[]
+  approvalLogs ReportApprovalLog[]
+  versions     ReportVersion[]
+  notifications ReportNotification[] @relation("DraftNotifications")
+
+  @@map("report_drafts")
+}
+
+model ReportComment {
+  id                String                @id @default(uuid())
+  reportDraftId     String
+  reportDraft       DepartmentReportDraft @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+  commentedByUserId String
+  commentedBy       User                  @relation("CommentAuthor", fields: [commentedByUserId], references: [id])
+  message           String                @db.Text
+  createdAt         DateTime              @default(now())
+
+  @@map("report_comments")
+}
+
+model ReportApprovalLog {
+  id              String                @id @default(uuid())
+  reportDraftId   String
+  reportDraft     DepartmentReportDraft @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+  reviewerUserId  String
+  reviewer        User                  @relation("LogReviewer", fields: [reviewerUserId], references: [id])
+  action          ApprovalAction
+  message         String?               @db.Text
+  createdAt       DateTime              @default(now())
+
+  @@map("approval_logs")
+}
+
+model ReportVersion {
+  id              String                @id @default(uuid())
+  reportDraftId   String
+  reportDraft     DepartmentReportDraft @relation(fields: [reportDraftId], references: [id], onDelete: Cascade)
+  versionNumber   Int
+  snapshotHtml    String                @db.LongText
+  createdByUserId String
+  createdBy       User                  @relation("VersionCreator", fields: [createdByUserId], references: [id])
+  createdAt       DateTime              @default(now())
+
+  @@map("report_versions")
+}
+
+model ReportNotification {
+  id            String                 @id @default(uuid())
+  userId        String
+  user          User                   @relation("NotifUser", fields: [userId], references: [id])
+  reportDraftId String?
+  reportDraft   DepartmentReportDraft? @relation("DraftNotifications", fields: [reportDraftId], references: [id], onDelete: SetNull)
+  title         String
+  message       String                 @db.Text
+  isRead        Boolean                @default(false)
+  createdAt     DateTime               @default(now())
+
+  @@map("notifications")
+}
+
+model InstituteAnnualReport {
+  id                      String              @id @default(uuid())
+  reportingYearId         String
+  departmentReportDraftIds Json
+  templateSectionIds       Json
+  instituteLogo           String?
+  coverImage              String?
+  generatedPdfUrl         String?
+  generatedHtml           String?             @db.LongText
+  status                  AnnualReportStatus  @default(GENERATED)
+  generatedAt             DateTime            @default(now())
+
+  @@map("annual_reports")
+}

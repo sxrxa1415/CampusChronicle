@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
+import { api } from "@/lib/api-client";
+import type { ApiUser, ApiDepartment } from "@/lib/api-client";
 import { 
   Users, Search, Trash2, Edit, Plus, Mail, Building2, UserCog
 } from "lucide-react";
@@ -14,47 +16,88 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MOCK_DEPARTMENTS } from "@/lib/mock-data";
-import type { InstituteUser, InstituteRole } from "@/lib/types";
+import { toast } from "sonner";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
 
 export default function UserManagementPage() {
-  const { currentUser, users, addUser, deleteUser, updateUserAccessControls } = useAppStore();
+  const { currentUser } = useAppStore();
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [departments, setDepartments] = useState<ApiDepartment[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // New user form state
-  const [newU, setNewU] = useState({ name: "", email: "", role: "FACULTY", departmentId: "" });
+  const [newU, setNewU] = useState({ name: "", email: "", password: "", role: "FACULTY", departmentId: "" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [usersRes, deptsRes] = await Promise.all([
+        api.getUsers(),
+        api.getDepartments(),
+      ]);
+      if (usersRes.success && usersRes.data) setUsers(usersRes.data);
+      if (deptsRes.success && deptsRes.data) setDepartments(deptsRes.data);
+    } catch {
+      toast.error("Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchSearch = !search || user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
+      const matchRole = roleFilter === "ALL" || user.role === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [users, search, roleFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (!currentUser || currentUser.role !== "ADMIN") {
     return <div className="p-8 text-center text-muted-foreground">Access Denied. Admins only.</div>;
   }
 
-  const filteredUsers = users.filter(u => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "ALL" || u.role === roleFilter;
-    return matchSearch && matchRole;
-  });
+  if (loading) return <DashboardSkeleton />;
 
-  const handleAddUser = () => {
-    if (!newU.name || !newU.email) return;
+  const handleAddUser = async () => {
+    if (!newU.name || !newU.email || !newU.password) {
+      toast.error("Name, email, and password are required.");
+      return;
+    }
 
-    const userObj: InstituteUser = {
-      id: `u_${Date.now()}`,
-      name: newU.name,
-      email: newU.email,
-      role: newU.role as InstituteRole,
-      departmentId: newU.departmentId || undefined,
-      avatar: newU.name.substring(0,2).toUpperCase(),
-      theme: "light",
-      emailNotificationsEnabled: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const result = await api.createUser({
+        name: newU.name,
+        email: newU.email,
+        password: newU.password,
+        role: newU.role,
+        departmentId: newU.departmentId || undefined,
+      });
 
-    addUser(userObj);
-    setIsAddOpen(false);
-    setNewU({ name: "", email: "", role: "FACULTY", departmentId: "" });
+      if (result.success) {
+        toast.success(result.message || `User ${newU.name} created.`);
+        setIsAddOpen(false);
+        setNewU({ name: "", email: "", password: "", role: "FACULTY", departmentId: "" });
+        fetchUsers();
+      } else {
+        toast.error(result.message || "Failed to create user.");
+      }
+    } catch {
+      toast.error("Failed to create user.");
+    }
   };
 
   return (
@@ -82,6 +125,10 @@ export default function UserManagementPage() {
                 <Label>Email</Label>
                 <Input value={newU.email} onChange={e => setNewU(f => ({...f, email: e.target.value}))} placeholder="john@institute.edu" />
               </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input type="password" value={newU.password} onChange={e => setNewU(f => ({...f, password: e.target.value}))} placeholder="Min 6 characters" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Role</Label>
@@ -101,7 +148,7 @@ export default function UserManagementPage() {
                     <Select value={newU.departmentId} onValueChange={d => setNewU(f => ({...f, departmentId: d}))}>
                       <SelectTrigger><SelectValue placeholder="Select Dept" /></SelectTrigger>
                       <SelectContent>
-                        {MOCK_DEPARTMENTS.map(d => <SelectItem key={d.id} value={d.id}>{d.code}</SelectItem>)}
+                        {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.code}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -134,10 +181,8 @@ export default function UserManagementPage() {
       </div>
 
       <div className="grid gap-3">
-        {filteredUsers.map(user => (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }} 
-            animate={{ opacity: 1, y: 0 }}
+        {paginatedUsers.map(user => (
+          <div 
             key={user.id} 
             className="bg-card border border-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           >
@@ -155,7 +200,7 @@ export default function UserManagementPage() {
                   {user.departmentId && (
                     <span className="flex items-center gap-1">
                       <Building2 className="w-3 h-3" /> 
-                      {MOCK_DEPARTMENTS.find(d => d.id === user.departmentId)?.code || "Unknown"}
+                      {departments.find(d => d.id === user.departmentId)?.code || "Unknown"}
                     </span>
                   )}
                 </div>
@@ -163,7 +208,19 @@ export default function UserManagementPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Select value={user.role} onValueChange={(r) => updateUserAccessControls(user.id, { role: r as InstituteRole })}>
+              <Select value={user.role} onValueChange={async (r) => { 
+                try {
+                  const res = await api.updateUser(user.id, { role: r });
+                  if (res.success) {
+                    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: r } : u));
+                    toast.success(`Role updated to ${r.replace("_", " ")}`);
+                  } else {
+                    toast.error(res.message || "Failed to update role.");
+                  }
+                } catch {
+                  toast.error("Failed to update role.");
+                }
+              }}>
                 <SelectTrigger className="h-8 w-[140px] text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -176,12 +233,24 @@ export default function UserManagementPage() {
               </Select>
 
               {user.id !== currentUser.id && (
-                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => deleteUser(user.id)}>
+                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={async () => {
+                  try {
+                    const result = await api.deleteUser(user.id);
+                    if (result.success) {
+                      toast.success(`User ${user.name} deleted.`);
+                      fetchUsers();
+                    } else {
+                      toast.error(result.message || "Delete failed.");
+                    }
+                  } catch {
+                    toast.error("Delete failed.");
+                  }
+                }}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
         {filteredUsers.length === 0 && (
           <div className="text-center p-8 text-muted-foreground border border-border rounded-xl">
@@ -189,6 +258,44 @@ export default function UserManagementPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 pt-2 pb-8">
+          <p className="text-xs font-medium text-muted-foreground">
+            Showing <span className="text-foreground">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-foreground">{Math.min(currentPage * pageSize, filteredUsers.length)}</span> of <span className="text-foreground">{filteredUsers.length} users</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" size="sm" className="h-8 font-bold uppercase text-[10px] tracking-wider"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <Button 
+                  key={i} 
+                  variant={currentPage === i + 1 ? "default" : "outline"} 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-xs font-bold"
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+            </div>
+            <Button 
+              variant="outline" size="sm" className="h-8 font-bold uppercase text-[10px] tracking-wider"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

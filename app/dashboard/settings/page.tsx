@@ -2,22 +2,50 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Shield, Bell, Palette, Lock, Globe } from 'lucide-react';
+import { Save, Shield, Bell, Palette, Lock, Globe, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/store';
+import { toast } from 'sonner';
+
+const INITIAL_SETTINGS = {
+  notifications: true,
+  emailAlerts: true,
+  darkMode: false,
+  twoFactor: false,
+};
 
 export default function SettingsPage() {
-  const { showToast } = useAppStore();
-  const [settings, setSettings] = useState({
-    notifications: true,
-    emailAlerts: true,
-    darkMode: false,
-    twoFactor: false,
-  });
+  const { currentUser } = useAppStore();
+  const [settings, setSettings] = useState({ ...INITIAL_SETTINGS });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    showToast('Settings saved successfully!', 'success');
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Persist settings via API if available
+      if (currentUser) {
+        await fetch(`/api/users/${currentUser.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            emailNotificationsOn: settings.emailAlerts,
+            theme: settings.darkMode ? "dark" : "light",
+          }),
+        });
+      }
+      toast.success("Settings saved successfully.");
+    } catch {
+      toast.error("Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setSettings({ ...INITIAL_SETTINGS });
+    toast.info("Changes discarded.");
   };
 
   return (
@@ -104,14 +132,18 @@ export default function SettingsPage() {
 
           {/* Save */}
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={handleSave} disabled={saving} className="gap-2">
               <Save className="w-4 h-4" />
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" onClick={handleCancel} className="gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Cancel
+            </Button>
           </div>
         </Card>
       </motion.div>
     </div>
   );
 }
+

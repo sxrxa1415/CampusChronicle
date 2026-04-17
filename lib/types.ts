@@ -123,6 +123,7 @@ export interface InstituteReportTemplate {
   targetCategory?: ReportMetricCategory;
   sections: ReportSectionType[];
   usage: number;
+  guidelineFileUrl?: string;
   createdByAdminId: string;
   createdAt: string;
 }

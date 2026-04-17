@@ -109,51 +109,51 @@ export const MOCK_DEPARTMENTS: Department[] = [
 ];
 
 export const MOCK_REPORTING_YEARS: ReportingYear[] = [
-  { id: "ry1", label: "2023-2024", startDate: "2023-06-01", endDate: "2024-05-31", isActive: true },
+  { id: "ry_core", label: "2023-2024", startDate: "2023-06-01", endDate: "2024-05-31", isActive: true },
   { id: "ry2", label: "2022-2023", startDate: "2022-06-01", endDate: "2023-05-31", isActive: false },
   { id: "ry3", label: "2021-2022", startDate: "2021-06-01", endDate: "2022-05-31", isActive: false },
 ];
 
 export const MOCK_METRIC_ENTRIES: DepartmentMetricEntry[] = [
-  { id: "me1", departmentId: "dept1", reportingYearId: "ry1", category: "ACADEMIC", title: "University Rank Holders", description: "Students who secured University ranks in final semester exams. Arjun Selvam secured 3rd rank.", numericValue: 5, createdByUserId: "u3", studentId: "s1", status: "APPROVED_FINAL", createdAt: "2024-01-10T10:00:00Z", updatedAt: "2024-01-15T10:00:00Z", },
-  { id: "me2", departmentId: "dept1", reportingYearId: "ry1", category: "RESEARCH", title: "International Journal Publications", description: "Faculty published in IEEE, Springer and Elsevier journals. Lead author: Dr. Anitha Krishnamurthy.", numericValue: 18, createdByUserId: "u3", status: "APPROVED_FINAL", createdAt: "2024-01-12T10:00:00Z", updatedAt: "2024-01-18T10:00:00Z", },
-  { id: "me3", departmentId: "dept1", reportingYearId: "ry1", category: "STUDENT_ACHIEVEMENT", title: "Campus Placements", description: "Students placed in top MNCs including TCS, Infosys, Wipro, and Zoho.", numericValue: 142, createdByUserId: "u3", status: "PENDING_HOD", createdAt: "2024-02-01T10:00:00Z", updatedAt: "2024-02-01T10:00:00Z", },
-  { id: "me4", departmentId: "dept1", reportingYearId: "ry1", category: "EXTRACURRICULAR", title: "Technical Symposium - TechVista 2024", description: "Annual technical symposium with 500+ participants.", numericValue: 520, createdByUserId: "u2", financialSpends: 3200, status: "APPROVED_FINAL", createdAt: "2024-02-10T10:00:00Z", updatedAt: "2024-02-15T10:00:00Z", },
-  { id: "me5", departmentId: "dept1", reportingYearId: "ry1", category: "FACULTY_ACHIEVEMENT", title: "AICTE Sponsored Research Projects", description: "Faculty secured funded projects from AICTE.", numericValue: 3, createdByUserId: "u3", status: "REJECTED_NEEDS_REVIEW", reviewerComment: "Please attach proof of funding documents.", createdAt: "2024-02-20T10:00:00Z", updatedAt: "2024-02-25T10:00:00Z", },
-  { id: "me6", departmentId: "dept1", reportingYearId: "ry1", category: "INFRASTRUCTURE", title: "New AI & ML Lab Setup", description: "State-of-the-art AI lab with 40 high-performance workstations.", numericValue: 40, createdByUserId: "u2", financialSpends: 15400, status: "APPROVED_FINAL", createdAt: "2024-03-01T10:00:00Z", updatedAt: "2024-03-05T10:00:00Z", },
-  { id: "me7", departmentId: "dept2", reportingYearId: "ry1", category: "RESEARCH", title: "Conference Papers Presented", description: "Papers presented in national conferences by ECE faculty.", numericValue: 22, createdByUserId: "u5", status: "APPROVED_FINAL", createdAt: "2024-01-20T10:00:00Z", updatedAt: "2024-01-25T10:00:00Z", },
-  { id: "me8", departmentId: "dept2", reportingYearId: "ry1", category: "STUDENT_ACHIEVEMENT", title: "GATE Qualified Students", description: "Students qualified GATE 2024 from ECE department.", numericValue: 12, createdByUserId: "u5", status: "PENDING_ADMIN", createdAt: "2024-02-05T10:00:00Z", updatedAt: "2024-02-05T10:00:00Z", },
-  { id: "me9", departmentId: "dept3", reportingYearId: "ry1", category: "ACADEMIC", title: "Pass Percentage - Final Year", description: "Overall pass percentage of final year MECH students.", numericValue: 94, textualValue: "94%", createdByUserId: "u6", status: "PENDING_OFFICE", createdAt: "2024-02-15T10:00:00Z", updatedAt: "2024-02-15T10:00:00Z", },
-  { id: "me10", departmentId: "dept1", reportingYearId: "ry1", category: "FINANCIAL", title: "Department Budget Utilization", description: "Annual departmental budget utilization.", numericValue: 85, textualValue: "85% utilized", createdByUserId: "u2", financialSpends: 12500, status: "PENDING_HOD", createdAt: "2024-03-10T10:00:00Z", updatedAt: "2024-03-10T10:00:00Z", },
-  { id: "me11", departmentId: "dept4", reportingYearId: "ry1", category: "INFRASTRUCTURE", title: "Structural Lab Upgrades", description: "Purchased new Universal Testing Machine for the structural lab.", numericValue: 1, createdByUserId: "u1", financialSpends: 8900, status: "APPROVED_FINAL", createdAt: "2024-03-12T10:00:00Z", updatedAt: "2024-03-12T10:00:00Z", },
-  { id: "me12", departmentId: "dept5", reportingYearId: "ry1", category: "STUDENT_ACHIEVEMENT", title: "Hackathon Winners", description: "IT students won 1st prize at Smart India Hackathon.", numericValue: 6, createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-13T10:00:00Z", updatedAt: "2024-03-13T10:00:00Z", },
-  { id: "me13", departmentId: "dept2", reportingYearId: "ry1", category: "FINANCIAL", title: "Robotics Workshop Funding", description: "Funds approved for the 3-day robotics workshop.", numericValue: 1, createdByUserId: "u5", financialSpends: 850, status: "PENDING_OFFICE", createdAt: "2024-03-14T10:00:00Z", updatedAt: "2024-03-14T10:00:00Z", },
-  { id: "me14", departmentId: "dept5", reportingYearId: "ry1", category: "RESEARCH", title: "Cybersecurity Patents Filed", description: "IT faculty filed 3 patents in cloud security architecture.", numericValue: 3, createdByUserId: "u1", status: "PENDING_HOD", createdAt: "2024-03-15T10:00:00Z", updatedAt: "2024-03-15T10:00:00Z", },
-  { id: "me15", departmentId: "dept4", reportingYearId: "ry1", category: "ACADEMIC", title: "Civil Pass Percentage", description: "Civil batch 2024 overall passing rate achieved.", numericValue: 88, textualValue: "88%", createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-16T10:00:00Z", updatedAt: "2024-03-16T10:00:00Z", },
-  { id: "me16", departmentId: "dept3", reportingYearId: "ry1", category: "EXTRACURRICULAR", title: "Auto Expo Visit", description: "Industrial visit arranged for final year students to Auto Expo.", numericValue: 110, createdByUserId: "u6", financialSpends: 1200, status: "APPROVED_FINAL", createdAt: "2024-03-17T10:00:00Z", updatedAt: "2024-03-17T10:00:00Z", },
-  { id: "me17", departmentId: "dept1", reportingYearId: "ry1", category: "OTHER", title: "Alumni Meet 2024", description: "Hosted 400+ CSE alumni during the tech reunion.", numericValue: 410, createdByUserId: "u3", financialSpends: 2500, status: "APPROVED_FINAL", createdAt: "2024-03-18T10:00:00Z", updatedAt: "2024-03-18T10:00:00Z", },
-  { id: "me18", departmentId: "dept2", reportingYearId: "ry1", category: "INFRASTRUCTURE", title: "VLSI Board Upgrades", description: "Bought 12 new FPGA kits for the hardware lab.", numericValue: 12, createdByUserId: "u5", financialSpends: 4300, status: "PENDING_ADMIN", createdAt: "2024-03-19T10:00:00Z", updatedAt: "2024-03-19T10:00:00Z", },
-  { id: "me19", departmentId: "dept5", reportingYearId: "ry1", category: "ACADEMIC", title: "Information Tech Pass Percentage", description: "Surpassed target with highest passing batch for IT dept.", numericValue: 97, textualValue: "97%", createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-20T10:00:00Z", updatedAt: "2024-03-20T10:00:00Z", },
-  { id: "me20", departmentId: "dept4", reportingYearId: "ry1", category: "RESEARCH", title: "Concrete Durability Papers", description: "Civil faculty published 4 core journals this quarter.", numericValue: 4, createdByUserId: "u1", status: "PENDING_HOD", createdAt: "2024-03-21T10:00:00Z", updatedAt: "2024-03-21T10:00:00Z", },
-  { id: "me21", departmentId: "dept3", reportingYearId: "ry1", category: "STUDENT_ACHIEVEMENT", title: "National Go-Kart Championship", description: "Mechanical team secured 2nd place in Go-Kart racing.", numericValue: 15, createdByUserId: "u6", studentId: "s5", status: "APPROVED_FINAL", createdAt: "2024-03-22T10:00:00Z", updatedAt: "2024-03-22T10:00:00Z", },
-  { id: "me22", departmentId: "dept2", reportingYearId: "ry1", category: "ACADEMIC", title: "ECE Pass Percentage", description: "ECE pass rate finalized.", numericValue: 91, textualValue: "91%", createdByUserId: "u5", status: "APPROVED_FINAL", createdAt: "2024-03-23T10:00:00Z", updatedAt: "2024-03-23T10:00:00Z", },
-  { id: "me23", departmentId: "dept1", reportingYearId: "ry1", category: "FACULTY_ACHIEVEMENT", title: "Best Teaching Pedagogy Award", description: "Prof. Anitha Krishnamurthy won the star faculty award.", numericValue: 1, createdByUserId: "u3", status: "APPROVED_FINAL", createdAt: "2024-03-24T10:00:00Z", updatedAt: "2024-03-24T10:00:00Z", },
-  { id: "me24", departmentId: "dept3", reportingYearId: "ry1", category: "FINANCIAL", title: "CNC Machine Maintenance", description: "Annual maintenance contract for advanced machinery.", numericValue: 1, createdByUserId: "u6", financialSpends: 3200, status: "PENDING_OFFICE", createdAt: "2024-03-25T10:00:00Z", updatedAt: "2024-03-25T10:00:00Z", },
-  { id: "me25", departmentId: "dept5", reportingYearId: "ry1", category: "EXTRACURRICULAR", title: "Cloud Tech Seminar", description: "Organized a 2-day AWS bootcamp for 200 students.", numericValue: 200, createdByUserId: "u1", financialSpends: 900, status: "PENDING_ADMIN", createdAt: "2024-03-26T10:00:00Z", updatedAt: "2024-03-26T10:00:00Z", },
-  { id: "me26", departmentId: "dept2", reportingYearId: "ry1", category: "STUDENT_ACHIEVEMENT", title: "Placement Highest Package", description: "Student secured 18 LPA offer from Texas Instruments.", numericValue: 18, createdByUserId: "u5", studentId: "s3", status: "APPROVED_FINAL", createdAt: "2024-03-27T10:00:00Z", updatedAt: "2024-03-27T10:00:00Z", },
+  { id: "me1", departmentId: "dept1", reportingYearId: "ry_core", category: "ACADEMIC", title: "University Rank Holders", description: "Students who secured University ranks in final semester exams. Arjun Selvam secured 3rd rank.", numericValue: 5, createdByUserId: "u3", studentId: "s1", status: "APPROVED_FINAL", createdAt: "2024-01-10T10:00:00Z", updatedAt: "2024-01-15T10:00:00Z", },
+  { id: "me2", departmentId: "dept1", reportingYearId: "ry_core", category: "RESEARCH", title: "International Journal Publications", description: "Faculty published in IEEE, Springer and Elsevier journals. Lead author: Dr. Anitha Krishnamurthy.", numericValue: 18, createdByUserId: "u3", status: "APPROVED_FINAL", createdAt: "2024-01-12T10:00:00Z", updatedAt: "2024-01-18T10:00:00Z", },
+  { id: "me3", departmentId: "dept1", reportingYearId: "ry_core", category: "STUDENT_ACHIEVEMENT", title: "Campus Placements", description: "Students placed in top MNCs including TCS, Infosys, Wipro, and Zoho.", numericValue: 142, createdByUserId: "u3", status: "PENDING_HOD", createdAt: "2024-02-01T10:00:00Z", updatedAt: "2024-02-01T10:00:00Z", },
+  { id: "me4", departmentId: "dept1", reportingYearId: "ry_core", category: "EXTRACURRICULAR", title: "Technical Symposium - TechVista 2024", description: "Annual technical symposium with 500+ participants.", numericValue: 520, createdByUserId: "u2", financialSpends: 3200, status: "APPROVED_FINAL", createdAt: "2024-02-10T10:00:00Z", updatedAt: "2024-02-15T10:00:00Z", },
+  { id: "me5", departmentId: "dept1", reportingYearId: "ry_core", category: "FACULTY_ACHIEVEMENT", title: "AICTE Sponsored Research Projects", description: "Faculty secured funded projects from AICTE.", numericValue: 3, createdByUserId: "u3", status: "REJECTED_NEEDS_REVIEW", reviewerComment: "Please attach proof of funding documents.", createdAt: "2024-02-20T10:00:00Z", updatedAt: "2024-02-25T10:00:00Z", },
+  { id: "me6", departmentId: "dept1", reportingYearId: "ry_core", category: "INFRASTRUCTURE", title: "New AI & ML Lab Setup", description: "State-of-the-art AI lab with 40 high-performance workstations.", numericValue: 40, createdByUserId: "u2", financialSpends: 15400, status: "APPROVED_FINAL", createdAt: "2024-03-01T10:00:00Z", updatedAt: "2024-03-05T10:00:00Z", },
+  { id: "me7", departmentId: "dept2", reportingYearId: "ry_core", category: "RESEARCH", title: "Conference Papers Presented", description: "Papers presented in national conferences by ECE faculty.", numericValue: 22, createdByUserId: "u5", status: "APPROVED_FINAL", createdAt: "2024-01-20T10:00:00Z", updatedAt: "2024-01-25T10:00:00Z", },
+  { id: "me8", departmentId: "dept2", reportingYearId: "ry_core", category: "STUDENT_ACHIEVEMENT", title: "GATE Qualified Students", description: "Students qualified GATE 2024 from ECE department.", numericValue: 12, createdByUserId: "u5", status: "PENDING_ADMIN", createdAt: "2024-02-05T10:00:00Z", updatedAt: "2024-02-05T10:00:00Z", },
+  { id: "me9", departmentId: "dept3", reportingYearId: "ry_core", category: "ACADEMIC", title: "Pass Percentage - Final Year", description: "Overall pass percentage of final year MECH students.", numericValue: 94, textualValue: "94%", createdByUserId: "u6", status: "PENDING_OFFICE", createdAt: "2024-02-15T10:00:00Z", updatedAt: "2024-02-15T10:00:00Z", },
+  { id: "me10", departmentId: "dept1", reportingYearId: "ry_core", category: "FINANCIAL", title: "Department Budget Utilization", description: "Annual departmental budget utilization.", numericValue: 85, textualValue: "85% utilized", createdByUserId: "u2", financialSpends: 12500, status: "PENDING_HOD", createdAt: "2024-03-10T10:00:00Z", updatedAt: "2024-03-10T10:00:00Z", },
+  { id: "me11", departmentId: "dept4", reportingYearId: "ry_core", category: "INFRASTRUCTURE", title: "Structural Lab Upgrades", description: "Purchased new Universal Testing Machine for the structural lab.", numericValue: 1, createdByUserId: "u1", financialSpends: 8900, status: "APPROVED_FINAL", createdAt: "2024-03-12T10:00:00Z", updatedAt: "2024-03-12T10:00:00Z", },
+  { id: "me12", departmentId: "dept5", reportingYearId: "ry_core", category: "STUDENT_ACHIEVEMENT", title: "Hackathon Winners", description: "IT students won 1st prize at Smart India Hackathon.", numericValue: 6, createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-13T10:00:00Z", updatedAt: "2024-03-13T10:00:00Z", },
+  { id: "me13", departmentId: "dept2", reportingYearId: "ry_core", category: "FINANCIAL", title: "Robotics Workshop Funding", description: "Funds approved for the 3-day robotics workshop.", numericValue: 1, createdByUserId: "u5", financialSpends: 850, status: "PENDING_OFFICE", createdAt: "2024-03-14T10:00:00Z", updatedAt: "2024-03-14T10:00:00Z", },
+  { id: "me14", departmentId: "dept5", reportingYearId: "ry_core", category: "RESEARCH", title: "Cybersecurity Patents Filed", description: "IT faculty filed 3 patents in cloud security architecture.", numericValue: 3, createdByUserId: "u1", status: "PENDING_HOD", createdAt: "2024-03-15T10:00:00Z", updatedAt: "2024-03-15T10:00:00Z", },
+  { id: "me15", departmentId: "dept4", reportingYearId: "ry_core", category: "ACADEMIC", title: "Civil Pass Percentage", description: "Civil batch 2024 overall passing rate achieved.", numericValue: 88, textualValue: "88%", createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-16T10:00:00Z", updatedAt: "2024-03-16T10:00:00Z", },
+  { id: "me16", departmentId: "dept3", reportingYearId: "ry_core", category: "EXTRACURRICULAR", title: "Auto Expo Visit", description: "Industrial visit arranged for final year students to Auto Expo.", numericValue: 110, createdByUserId: "u6", financialSpends: 1200, status: "APPROVED_FINAL", createdAt: "2024-03-17T10:00:00Z", updatedAt: "2024-03-17T10:00:00Z", },
+  { id: "me17", departmentId: "dept1", reportingYearId: "ry_core", category: "OTHER", title: "Alumni Meet 2024", description: "Hosted 400+ CSE alumni during the tech reunion.", numericValue: 410, createdByUserId: "u3", financialSpends: 2500, status: "APPROVED_FINAL", createdAt: "2024-03-18T10:00:00Z", updatedAt: "2024-03-18T10:00:00Z", },
+  { id: "me18", departmentId: "dept2", reportingYearId: "ry_core", category: "INFRASTRUCTURE", title: "VLSI Board Upgrades", description: "Bought 12 new FPGA kits for the hardware lab.", numericValue: 12, createdByUserId: "u5", financialSpends: 4300, status: "PENDING_ADMIN", createdAt: "2024-03-19T10:00:00Z", updatedAt: "2024-03-19T10:00:00Z", },
+  { id: "me19", departmentId: "dept5", reportingYearId: "ry_core", category: "ACADEMIC", title: "Information Tech Pass Percentage", description: "Surpassed target with highest passing batch for IT dept.", numericValue: 97, textualValue: "97%", createdByUserId: "u1", status: "APPROVED_FINAL", createdAt: "2024-03-20T10:00:00Z", updatedAt: "2024-03-20T10:00:00Z", },
+  { id: "me20", departmentId: "dept4", reportingYearId: "ry_core", category: "RESEARCH", title: "Concrete Durability Papers", description: "Civil faculty published 4 core journals this quarter.", numericValue: 4, createdByUserId: "u1", status: "PENDING_HOD", createdAt: "2024-03-21T10:00:00Z", updatedAt: "2024-03-21T10:00:00Z", },
+  { id: "me21", departmentId: "dept3", reportingYearId: "ry_core", category: "STUDENT_ACHIEVEMENT", title: "National Go-Kart Championship", description: "Mechanical team secured 2nd place in Go-Kart racing.", numericValue: 15, createdByUserId: "u6", studentId: "s5", status: "APPROVED_FINAL", createdAt: "2024-03-22T10:00:00Z", updatedAt: "2024-03-22T10:00:00Z", },
+  { id: "me22", departmentId: "dept2", reportingYearId: "ry_core", category: "ACADEMIC", title: "ECE Pass Percentage", description: "ECE pass rate finalized.", numericValue: 91, textualValue: "91%", createdByUserId: "u5", status: "APPROVED_FINAL", createdAt: "2024-03-23T10:00:00Z", updatedAt: "2024-03-23T10:00:00Z", },
+  { id: "me23", departmentId: "dept1", reportingYearId: "ry_core", category: "FACULTY_ACHIEVEMENT", title: "Best Teaching Pedagogy Award", description: "Prof. Anitha Krishnamurthy won the star faculty award.", numericValue: 1, createdByUserId: "u3", status: "APPROVED_FINAL", createdAt: "2024-03-24T10:00:00Z", updatedAt: "2024-03-24T10:00:00Z", },
+  { id: "me24", departmentId: "dept3", reportingYearId: "ry_core", category: "FINANCIAL", title: "CNC Machine Maintenance", description: "Annual maintenance contract for advanced machinery.", numericValue: 1, createdByUserId: "u6", financialSpends: 3200, status: "PENDING_OFFICE", createdAt: "2024-03-25T10:00:00Z", updatedAt: "2024-03-25T10:00:00Z", },
+  { id: "me25", departmentId: "dept5", reportingYearId: "ry_core", category: "EXTRACURRICULAR", title: "Cloud Tech Seminar", description: "Organized a 2-day AWS bootcamp for 200 students.", numericValue: 200, createdByUserId: "u1", financialSpends: 900, status: "PENDING_ADMIN", createdAt: "2024-03-26T10:00:00Z", updatedAt: "2024-03-26T10:00:00Z", },
+  { id: "me26", departmentId: "dept2", reportingYearId: "ry_core", category: "STUDENT_ACHIEVEMENT", title: "Placement Highest Package", description: "Student secured 18 LPA offer from Texas Instruments.", numericValue: 18, createdByUserId: "u5", studentId: "s3", status: "APPROVED_FINAL", createdAt: "2024-03-27T10:00:00Z", updatedAt: "2024-03-27T10:00:00Z", },
 ];
 
 export const MOCK_KPIS: DepartmentKPI[] = [
-  { id: "kpi1", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Student Pass Percentage", kpiValue: 96.5, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi2", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Placement Rate", kpiValue: 88, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi3", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Publications Count", kpiValue: 18, unit: "papers", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi4", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Funded Projects", kpiValue: 3, unit: "projects", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi5", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Infrastructure Developments", kpiValue: 2, unit: "labs", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi6", departmentId: "dept1", reportingYearId: "ry1", kpiName: "Events Conducted", kpiValue: 8, unit: "events", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi7", departmentId: "dept2", reportingYearId: "ry1", kpiName: "Student Pass Percentage", kpiValue: 92.3, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi8", departmentId: "dept2", reportingYearId: "ry1", kpiName: "Placement Rate", kpiValue: 82, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi9", departmentId: "dept3", reportingYearId: "ry1", kpiName: "Student Pass Percentage", kpiValue: 94, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
-  { id: "kpi10", departmentId: "dept3", reportingYearId: "ry1", kpiName: "Placement Rate", kpiValue: 75, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi1", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Student Pass Percentage", kpiValue: 96.5, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi2", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Placement Rate", kpiValue: 88, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi3", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Publications Count", kpiValue: 18, unit: "papers", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi4", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Funded Projects", kpiValue: 3, unit: "projects", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi5", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Infrastructure Developments", kpiValue: 2, unit: "labs", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi6", departmentId: "dept1", reportingYearId: "ry_core", kpiName: "Events Conducted", kpiValue: 8, unit: "events", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi7", departmentId: "dept2", reportingYearId: "ry_core", kpiName: "Student Pass Percentage", kpiValue: 92.3, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi8", departmentId: "dept2", reportingYearId: "ry_core", kpiName: "Placement Rate", kpiValue: 82, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi9", departmentId: "dept3", reportingYearId: "ry_core", kpiName: "Student Pass Percentage", kpiValue: 94, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
+  { id: "kpi10", departmentId: "dept3", reportingYearId: "ry_core", kpiName: "Placement Rate", kpiValue: 75, unit: "%", createdAt: "2024-01-01T00:00:00Z" },
 ];
 
 export const MOCK_REPORT_TEMPLATES: InstituteReportTemplate[] = [
@@ -189,7 +189,7 @@ export const MOCK_TEMPLATE_SECTIONS: ReportTemplateSection[] = [
 
 export const MOCK_REPORT_DRAFTS: DepartmentReportDraft[] = [
   {
-    id: "rd1", departmentId: "dept1", reportingYearId: "ry1",
+    id: "rd1", departmentId: "dept1", reportingYearId: "ry_core",
     compiledMetricEntryIds: ["me1", "me2", "me3", "me4", "me6"],
     status: "PENDING_ADMIN",
     submittedAt: "2024-03-01T10:00:00Z",
@@ -197,7 +197,7 @@ export const MOCK_REPORT_DRAFTS: DepartmentReportDraft[] = [
     createdAt: "2024-02-20T10:00:00Z", updatedAt: "2024-03-01T10:00:00Z",
   },
   {
-    id: "rd2", departmentId: "dept2", reportingYearId: "ry1",
+    id: "rd2", departmentId: "dept2", reportingYearId: "ry_core",
     compiledMetricEntryIds: ["me7", "me8"],
     status: "PENDING_OFFICE",
     submittedAt: "2024-03-05T10:00:00Z",
@@ -205,14 +205,14 @@ export const MOCK_REPORT_DRAFTS: DepartmentReportDraft[] = [
     createdAt: "2024-02-25T10:00:00Z", updatedAt: "2024-03-05T10:00:00Z",
   },
   {
-    id: "rd3", departmentId: "dept3", reportingYearId: "ry1",
+    id: "rd3", departmentId: "dept3", reportingYearId: "ry_core",
     compiledMetricEntryIds: ["me9"],
     status: "DRAFT",
     createdByUserId: "u6",
     createdAt: "2024-03-10T10:00:00Z", updatedAt: "2024-03-10T10:00:00Z",
   },
   {
-    id: "rd4", departmentId: "dept4", reportingYearId: "ry1",
+    id: "rd4", departmentId: "dept4", reportingYearId: "ry_core",
     compiledMetricEntryIds: [],
     status: "APPROVED_FINAL",
     submittedAt: "2024-02-15T10:00:00Z",
@@ -241,7 +241,7 @@ export const MOCK_VERSIONS: ReportVersion[] = [
 
 export const MOCK_ANNUAL_REPORT: InstituteAnnualReport = {
   id: "ar1",
-  reportingYearId: "ry1",
+  reportingYearId: "ry_core",
   departmentReportDraftIds: ["rd1", "rd2", "rd3", "rd4"],
   templateSectionIds: ["ts1", "ts2", "ts3", "ts4", "ts5", "ts6", "ts7"],
   status: "GENERATED",
@@ -259,10 +259,10 @@ export const MOCK_NOTIFICATIONS: ReportNotification[] = [
 ];
 
 export const DEMO_CREDENTIALS = [
-  { email: "admin@reports.edu", password: "Admin@123", role: "ADMIN", name: "Dr. Rajesh Kumar" },
-  { email: "hod.cse@reports.edu", password: "Hod@123", role: "DEPARTMENT_HEAD", name: "Dr. Meenakshi Sundaram" },
-  { email: "faculty.cse@reports.edu", password: "Faculty@123", role: "FACULTY", name: "Prof. Anitha Krishnamurthy" },
-  { email: "reviewer@reports.edu", password: "Review@123", role: "REVIEWER", name: "Dr. Senthilkumar Ramasamy" },
+  { email: "admin@reports.edu", password: "Admin@123", role: "ADMIN", name: "Dr. K. Muthusamy" },
+  { email: "hod.cs@reports.edu", password: "Hod@123", role: "DEPARTMENT_HEAD", name: "Dr. S. Kanimozhi" },
+  { email: "faculty1@reports.edu", password: "Faculty@123", role: "FACULTY", name: "Prof. R. Karthikeyan" },
+  { email: "reviewer1@reports.edu", password: "Reviewer@123", role: "REVIEWER", name: "Dr. V. Saraswathi" },
 ];
 
 export const YEARLY_TREND_DATA = [

@@ -6,58 +6,32 @@ import { Bell, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAppStore } from '@/lib/store';
-
-interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  type: 'success' | 'pending' | 'warning' | 'info';
-  timestamp: string;
-  read: boolean;
-}
+import { api } from '@/lib/api-client';
 
 export function NotificationBadge() {
+  const { currentUser, notifications, markNotificationRead, markAllNotificationsRead } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
-  const notifications: NotificationItem[] = [
-    {
-      id: '1',
-      title: 'Report Approved',
-      message: 'Your annual report has been approved by the admin',
-      type: 'success',
-      timestamp: '2 hours ago',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'Pending Review',
-      message: '3 entries are pending review from department head',
-      type: 'pending',
-      timestamp: '1 day ago',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'Submission Deadline',
-      message: 'Submit your final report before March 31st',
-      type: 'warning',
-      timestamp: '3 days ago',
-      read: true,
-    },
-  ];
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const safeNotifs = Array.isArray(notifications) ? notifications : [];
+  const myNotifs = safeNotifs.filter((n) => n.userId === currentUser?.id);
+  const unreadCount = myNotifs.filter(n => !n.isRead).length;
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'warning':
-        return <AlertCircle className="w-4 h-4 text-orange-500" />;
-      default:
-        return <Bell className="w-4 h-4 text-blue-500" />;
-    }
+  const getIcon = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.includes('approved') || lower.includes('success')) return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (lower.includes('pending') || lower.includes('review')) return <Clock className="w-4 h-4 text-yellow-500" />;
+    if (lower.includes('reject') || lower.includes('deadline')) return <AlertCircle className="w-4 h-4 text-orange-500" />;
+    return <Bell className="w-4 h-4 text-blue-500" />;
+  };
+
+  const handleMarkRead = async (id: string) => {
+    markNotificationRead(id);
+    try { await api.markNotificationRead(id); } catch { /* fallback already applied */ }
+  };
+
+  const handleMarkAll = async () => {
+    markAllNotificationsRead();
+    try { await api.markAllNotificationsRead(); } catch { /* fallback already applied */ }
   };
 
   return (
@@ -99,31 +73,42 @@ export function NotificationBadge() {
               <Card className="shadow-lg">
                 <div className="p-4 border-b border-border flex items-center justify-between">
                   <h3 className="font-semibold text-foreground">Notifications</h3>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAll}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setIsOpen(false)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="max-h-96 overflow-y-auto">
-                  {notifications.length === 0 ? (
+                  {myNotifs.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
                       <p>No notifications</p>
                     </div>
                   ) : (
-                    notifications.map((notif) => (
+                    myNotifs.slice(0, 10).map((notif) => (
                       <motion.div
                         key={notif.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
+                        onClick={() => !notif.isRead && handleMarkRead(notif.id)}
                         className={`p-4 border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${
-                          !notif.read ? 'bg-primary/5' : ''
+                          !notif.isRead ? 'bg-primary/5' : ''
                         }`}
                       >
                         <div className="flex gap-3">
-                          {getIcon(notif.type)}
+                          {getIcon(notif.title)}
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm text-foreground truncate">
                               {notif.title}
@@ -131,8 +116,8 @@ export function NotificationBadge() {
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {notif.message}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {notif.timestamp}
+                            <p className="text-xs text-muted-foreground/70 mt-2">
+                              {new Date(notif.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                             </p>
                           </div>
                         </div>
@@ -142,8 +127,8 @@ export function NotificationBadge() {
                 </div>
 
                 <div className="p-4 border-t border-border">
-                  <Button variant="outline" className="w-full text-xs">
-                    View All Notifications
+                  <Button variant="outline" className="w-full text-xs" onClick={() => setIsOpen(false)}>
+                    Close
                   </Button>
                 </div>
               </Card>

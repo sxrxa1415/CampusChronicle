@@ -1,44 +1,63 @@
 "use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { MOCK_DEPARTMENTS } from "@/lib/mock-data";
-import { Bell, LogOut, Moon, Sun, GraduationCap, HelpCircle, X } from "lucide-react";
+import { api } from "@/lib/api-client";
+import type { ApiNotification } from "@/lib/api-client";
+import { Bell, LogOut, Moon, Sun, GraduationCap, HelpCircle, X, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/upload": "Data Upload",
-  "/dashboard/entries": "My Entries",
-  "/dashboard/draft": "Draft & Preview",
-  "/dashboard/review": "Review Reports",
-  "/dashboard/report-builder": "Report Builder",
-  "/dashboard/reports": "All Reports",
-  "/dashboard/analytics": "Analytics",
-  "/dashboard/departments": "Departments",
-  "/dashboard/templates": "Templates",
-  "/dashboard/settings": "Settings",
+  "/dashboard": "Dashboard Overview",
+  "/dashboard/upload": "Metric Submission",
+  "/dashboard/entries": "My Records",
+  "/dashboard/draft": "Institution Draft",
+  "/dashboard/review": "Audit Console",
+  "/dashboard/reports": "Final Archive",
+  "/dashboard/analytics": "Intelligence Center",
+  "/dashboard/users": "Identity Control",
+  "/dashboard/team": "Access Mapping",
+  "/dashboard/templates": "Report Designer",
+  "/dashboard/settings": "System Config",
 };
 
 export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, notifications, markAllNotificationsRead, markNotificationRead, logout, updateUserTheme, startTutorial } = useAppStore();
+  const { currentUser, notifications: zustandNotifs, markAllNotificationsRead, markNotificationRead, logout, updateUserTheme, startTutorial } = useAppStore();
   const [showNotif, setShowNotif] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [apiNotifs, setApiNotifs] = useState<ApiNotification[]>([]);
+  const [apiUnread, setApiUnread] = useState(0);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const result = await api.getNotifications();
+      if (result.success && result.data) {
+        setApiNotifs(result.data.notifications);
+        setApiUnread(result.data.unreadCount);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { 
+    if (currentUser) fetchNotifications(); 
+  }, [fetchNotifications, currentUser]);
 
   if (!currentUser) return null;
 
-  const userNotifs = notifications.filter((n) => n.userId === currentUser.id);
-  const unread = userNotifs.filter((n) => !n.isRead).length;
-  const dept = currentUser.departmentId ? MOCK_DEPARTMENTS.find((d) => d.id === currentUser.departmentId) : null;
-  const title = PAGE_TITLES[pathname] ?? "CampusChronicle";
+  const safeZustandNotifs = Array.isArray(zustandNotifs) ? zustandNotifs : [];
+  const userNotifs = apiNotifs.length > 0 ? apiNotifs : safeZustandNotifs.filter((n) => n.userId === currentUser.id);
+  const unreadCount = apiNotifs.length > 0 ? apiUnread : safeZustandNotifs.filter((n) => n.userId === currentUser.id && !n.isRead).length;
+  const title = PAGE_TITLES[pathname] ?? "Portal Control";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch { /* ignore */ }
     logout();
     toast.success("Logged out successfully");
     router.push("/");
@@ -49,131 +68,101 @@ export function AppTopbar() {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle("dark");
     updateUserTheme(newTheme);
-    toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode enabled`);
-  };
-
-  const typeColors: Record<string, string> = {
-    info: "bg-blue-50 border-blue-200",
-    success: "bg-green-50 border-green-200",
-    warning: "bg-yellow-50 border-yellow-200",
-    error: "bg-red-50 border-red-200",
+    toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode active`);
   };
 
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
-      {/* Left: Mobile logo + title */}
-      <div className="flex items-center gap-3">
-        <div className="md:hidden flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <GraduationCap className="w-4 h-4 text-primary-foreground" />
-          </div>
-        </div>
-        <div>
-          <h1 className="text-sm font-semibold text-foreground leading-tight">{title}</h1>
-          {dept && <p className="text-xs text-muted-foreground hidden sm:block">{dept.name}</p>}
+    <header className="h-16 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col">
+           <h1 className="text-lg font-black text-foreground tracking-tight leading-none">{title}</h1>
+           <div className="flex items-center gap-1.5 mt-1 border-l-2 border-primary/30 pl-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Academic Hub</span>
+              <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/40" />
+              <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{currentUser.role.replace("_", " ")}</span>
+           </div>
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-1 md:gap-2">
-        {/* Tutorial */}
-        <Button variant="ghost" size="icon" onClick={startTutorial} className="w-8 h-8 md:w-9 md:h-9" title="Start tutorial">
-          <HelpCircle className="w-4 h-4" />
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={startTutorial} className="hidden sm:flex h-9 gap-2 text-xs font-bold border border-transparent hover:border-border rounded-xl">
+          <HelpCircle className="w-4 h-4 text-primary" /> Guide
         </Button>
 
-        {/* Theme toggle */}
-        <Button variant="ghost" size="icon" onClick={toggleTheme} className="w-8 h-8 md:w-9 md:h-9">
-          {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        <div className="w-[1px] h-6 bg-border mx-2 hidden sm:block" />
+
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="w-10 h-10 rounded-xl hover:bg-muted">
+          {darkMode ? <Sun className="w-5 h-5 text-orange-400" /> : <Moon className="w-5 h-5 text-primary" />}
         </Button>
 
-        {/* Notifications */}
         <div className="relative">
           <Button
             variant="ghost" size="icon"
             onClick={() => setShowNotif(!showNotif)}
-            className="w-8 h-8 md:w-9 md:h-9 relative"
+            className="w-10 h-10 rounded-xl relative hover:bg-muted"
           >
-            <Bell className="w-4 h-4" />
-            {unread > 0 && (
-              <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
-                {unread > 9 ? "9+" : unread}
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-4 h-4 bg-destructive text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card">
+                {unreadCount > 9 ? "!" : unreadCount}
               </span>
             )}
           </Button>
 
-          <AnimatePresence>
-            {showNotif && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowNotif(false)} />
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-10 w-80 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-4 h-4 text-foreground" />
-                      <span className="text-sm font-semibold text-foreground">Notifications</span>
-                      {unread > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{unread}</Badge>}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {unread > 0 && (
-                        <button
-                          onClick={() => { markAllNotificationsRead(); toast.success("All marked as read"); }}
-                          className="text-[11px] text-primary hover:underline"
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                      <button onClick={() => setShowNotif(false)} className="p-1 rounded hover:bg-muted ml-2">
-                        <X className="w-3 h-3 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {userNotifs.length === 0 ? (
-                      <div className="py-8 text-center text-muted-foreground text-sm">No notifications</div>
-                    ) : (
-                      userNotifs.slice(0, 8).map((n) => (
-                        <motion.div
-                          key={n.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          onClick={() => markNotificationRead(n.id)}
-                          className={cn(
-                            "px-4 py-3 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors",
-                            !n.isRead && "bg-primary/5"
-                          )}
-                        >
-                          <div className="flex items-start gap-2">
-                            {!n.isRead && <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />}
-                            <div className={n.isRead ? "pl-3.5" : ""}>
-                              <p className="text-xs font-semibold text-foreground">{n.title}</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{n.message}</p>
-                              <p className="text-[10px] text-muted-foreground/70 mt-1">
-                                {new Date(n.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+          {showNotif && (
+            <>
+              <div className="fixed inset-0 z-40 bg-black/5 md:bg-transparent" onClick={() => setShowNotif(false)} />
+              <div
+                className="absolute right-0 top-12 w-80 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20">
+                  <span className="text-xs font-black uppercase tracking-widest text-foreground">Activity Feed</span>
+                  <button onClick={() => setShowNotif(false)} className="p-1 hover:bg-muted rounded-lg transition-colors">
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {userNotifs.length === 0 ? (
+                    <div className="py-12 text-center text-muted-foreground text-xs font-medium italic">All caught up! No notifications.</div>
+                  ) : (
+                    userNotifs.slice(0, 10).map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          api.markNotificationRead(n.id);
+                          markNotificationRead(n.id);
+                        }}
+                        className={cn(
+                          "px-5 py-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-all",
+                          !n.isRead && "bg-primary/[0.03] border-l-2 border-l-primary"
+                        )}
+                      >
+                         <p className="text-[11px] font-black text-foreground leading-tight">{n.title}</p>
+                         <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{n.message}</p>
+                         <p className="text-[10px] font-bold text-muted-foreground/40 mt-3 uppercase tracking-tighter">
+                           {new Date(n.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })}
+                         </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* User avatar + logout */}
-        <div className="flex items-center gap-2 ml-1">
-          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary">
+        <div className="w-[1px] h-6 bg-border mx-2" />
+
+        <div className="flex items-center gap-3 pl-1">
+          <div className="hidden lg:block text-right">
+             <p className="text-xs font-black text-foreground leading-none">{currentUser.name.split(" ")[0]}</p>
+             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Online</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-black text-primary shadow-inner">
             {currentUser.avatar}
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="w-8 h-8 text-muted-foreground hover:text-destructive" title="Log out">
-            <LogOut className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="w-10 h-10 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+            <LogOut className="w-5 h-5" />
           </Button>
         </div>
       </div>
