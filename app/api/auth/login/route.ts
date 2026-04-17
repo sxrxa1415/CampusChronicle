@@ -44,7 +44,7 @@ export async function POST(
 
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, message: "Email and password are required.", messageType: "error" },
+        { success: false, message: "Email and password are required.", messageType: "error" } as LoginErrorResponse,
         { status: 400 },
       );
     }
@@ -59,7 +59,7 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Invalid email or password.", messageType: "error" },
+        { success: false, message: "Invalid email or password.", messageType: "error" } as LoginErrorResponse,
         { status: 401 },
       );
     }
@@ -67,7 +67,7 @@ export async function POST(
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
       return NextResponse.json(
-        { success: false, message: "Invalid email or password.", messageType: "error" },
+        { success: false, message: "Invalid email or password.", messageType: "error" } as LoginErrorResponse,
         { status: 401 },
       );
     }
@@ -118,7 +118,7 @@ export async function POST(
     const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Login error:", message);
     return NextResponse.json(
-      { success: false, message: "Login failed. Please try again.", messageType: "error" },
+      { success: false, message: "Login failed. Please try again.", messageType: "error" } as LoginErrorResponse,
       { status: 500 },
     );
   }
