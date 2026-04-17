@@ -216,10 +216,10 @@ export default function UploadPage() {
               </div>
 
               <div className="pt-2 border-t border-primary/10">
-                <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
+                <div className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                    Review the {activeTemplate.name} guidelines above for {form.category} compliance.
-                </p>
+                </div>
               </div>
             </div>
           )}

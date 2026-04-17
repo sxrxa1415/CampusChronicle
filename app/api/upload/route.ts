@@ -2,21 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import { put } from "@vercel/blob";
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "text/csv",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-];
-
 const ALLOWED_EXTENSIONS = [
   ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp", ".csv", ".xls", ".xlsx",
 ];
@@ -65,35 +54,70 @@ export async function POST(request: NextRequest) {
       .replace(/_{2,}/g, "_");
     const filename = `${timestamp}_${sanitizedName}`;
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    // CASE 1: Vercel Blob Storage (Production Recommended)
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        const blob = await put(filename, file, { 
+          access: 'public',
+          addRandomSuffix: true 
+        });
+        
+        return NextResponse.json({
+          success: true,
+          message: "File uploaded to cloud storage.",
+          data: {
+            filename: blob.pathname,
+            originalName: file.name,
+            size: file.size,
+            mimeType: file.type,
+            url: blob.url,
+          },
+        });
+      } catch (blobError) {
+        console.error("Vercel Blob error:", blobError);
+        // Fall through to local if blob fails (might be token issues)
+      }
     }
 
-    // Write file to disk
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filePath = path.join(uploadsDir, filename);
-    await writeFile(filePath, buffer);
+    // CASE 2: Local Filesystem (Dev Only, Fails on Vercel)
+    // Warning: Vercel filesystem is read-only. This block will fail if not using Blob.
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
 
-    // Public URL
-    const publicUrl = `/uploads/${filename}`;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const filePath = path.join(uploadsDir, filename);
+      await writeFile(filePath, buffer);
 
-    return NextResponse.json({
-      success: true,
-      message: "File uploaded successfully.",
-      data: {
-        filename,
-        originalName: file.name,
-        size: file.size,
-        mimeType: file.type,
-        url: publicUrl,
-      },
-    });
+      const publicUrl = `/uploads/${filename}`;
+
+      return NextResponse.json({
+        success: true,
+        message: "File uploaded locally (Note: Local uploads don't persist on Vercel).",
+        data: {
+          filename,
+          originalName: file.name,
+          size: file.size,
+          mimeType: file.type,
+          url: publicUrl,
+        },
+      });
+    } catch (fsError) {
+      console.error("Filesystem upload error:", fsError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Vercel deployment detected. Please configure BLOB_READ_WRITE_TOKEN for persistent file uploads." 
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("General upload error:", error);
     return NextResponse.json(
-      { success: false, message: "Upload failed. Please try again." },
+      { success: false, message: "Upload failed. Server configuration error." },
       { status: 500 }
     );
   }
