@@ -282,8 +282,21 @@ async function main(): Promise<void> {
     data: {
       id: "tmpl_annual_25",
       name: "Standard Institutional Annual Report 2025",
-      description: "Primary template for NAAC and NIRF alignment.",
+      description: "Primary template for NAAC and NIRF alignment. Follow the attached manual for section-wise documentation requirements.",
       sections: sections, // Store metadata as JSON as required by schema
+      guidelineFileUrl: "/uploads/1776410102970_How_To_Connect_MySQL_V8.0.20_to_HCP_V1.6.0_20200703.pdf",
+      createdByAdminId: "u_admin"
+    }
+  });
+  
+  await prisma.instituteReportTemplate.create({
+    data: {
+      id: "tmpl_research_25",
+      name: "Research & Publication Portfolio Guide",
+      description: "Detailed guidelines for submitting journal papers, patent proofs, and conference records.",
+      sections: sections.filter(s => s.category === "RESEARCH"),
+      targetCategory: "RESEARCH",
+      guidelineFileUrl: "/uploads/1776410418592_How_To_Connect_MySQL_V8.0.20_to_HCP_V1.6.0_20200703.pdf",
       createdByAdminId: "u_admin"
     }
   });
